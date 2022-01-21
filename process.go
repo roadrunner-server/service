@@ -134,7 +134,7 @@ func (p *Process) execHandler() {
 		// lock here, because p.startTime could be changed during the check
 		p.Lock()
 		// if the exec timeout is set
-		if p.ExecTimeout != 0 {
+		if p.ExecTimeout != 0 { //nolint:nestif
 			// if stopped -> kill the process (SIGINT-> SIGKILL) and exit
 			if atomic.CompareAndSwapUint64(&p.stopped, 1, 1) {
 				err := p.command.Process.Signal(syscall.SIGINT)
