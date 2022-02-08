@@ -7,7 +7,7 @@ require (
 	github.com/roadrunner-server/errors v1.1.1
 	github.com/roadrunner-server/sdk/v2 v2.8.0-rc.3
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	go.uber.org/zap v1.20.0
+	go.uber.org/zap v1.21.0
 )
 
 require (
@@ -20,6 +20,6 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
-	golang.org/x/sys v0.0.0-20220204135822-1c1b9b1eba6a // indirect
+	golang.org/x/sys v0.0.0-20220207234003-57398862261d // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
