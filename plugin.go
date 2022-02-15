@@ -4,8 +4,8 @@ import (
 	"sync"
 
 	"github.com/roadrunner-server/api/v2/plugins/config"
+	"github.com/roadrunner-server/api/v2/state/process"
 	"github.com/roadrunner-server/errors"
-	"github.com/roadrunner-server/sdk/v2/state/process"
 	"go.uber.org/zap"
 )
 
