@@ -8,7 +8,6 @@ type Env map[string]string
 // Service represents particular service configuration
 type Service struct {
 	Command         string        `mapstructure:"command"`
-	Output          string        `mapstructure:"log_output"`
 	ProcessNum      int           `mapstructure:"process_num"`
 	ExecTimeout     time.Duration `mapstructure:"exec_timeout"`
 	RemainAfterExit bool          `mapstructure:"remain_after_exit"`
@@ -18,7 +17,7 @@ type Service struct {
 
 // Config for the services
 type Config struct {
-	Services map[string]Service `mapstructure:"service"`
+	Services map[string]*Service `mapstructure:"service"`
 }
 
 func (c *Config) InitDefault() {

@@ -18,90 +18,102 @@ type Plugin struct {
 	cfg    Config
 
 	// all processes attached to the service
-	processes []*Process
+	processes sync.Map // uuid -> *Process
 }
 
-func (service *Plugin) Init(cfg config.Configurer, log *zap.Logger) error {
+func (p *Plugin) Init(cfg config.Configurer, log *zap.Logger) error {
 	const op = errors.Op("service_plugin_init")
 	if !cfg.Has(PluginName) {
 		return errors.E(errors.Disabled)
 	}
-	err := cfg.UnmarshalKey(PluginName, &service.cfg.Services)
+	err := cfg.UnmarshalKey(PluginName, &p.cfg.Services)
 	if err != nil {
 		return errors.E(op, err)
 	}
 
 	// init default parameters if not set by user
-	service.cfg.InitDefault()
+	p.cfg.InitDefault()
 	// save the logger
-	service.logger = log
+	p.logger = log
 
 	return nil
 }
 
-func (service *Plugin) Serve() chan error {
+func (p *Plugin) Serve() chan error {
 	errCh := make(chan error, 1)
 
 	// start processing
 	go func() {
 		// lock here, because Stop command might be invoked during the Serve
-		service.Lock()
-		defer service.Unlock()
+		p.Lock()
+		defer p.Unlock()
 
-		service.processes = make([]*Process, 0, len(service.cfg.Services))
-		// for the every service
-		for k := range service.cfg.Services {
+		for k := range p.cfg.Services {
 			// create needed number of the processes
-			for i := 0; i < service.cfg.Services[k].ProcessNum; i++ {
+			for i := 0; i < p.cfg.Services[k].ProcessNum; i++ {
 				// create processor structure, which will process all the services
-				service.processes = append(service.processes, NewServiceProcess(
-					service.cfg.Services[k].RemainAfterExit,
-					service.cfg.Services[k].ExecTimeout,
-					service.cfg.Services[k].RestartSec,
-					service.cfg.Services[k].Command,
-					service.cfg.Services[k].Env,
-					service.logger,
-					errCh,
-				))
+				p.processes.Store(k, NewServiceProcess(p.cfg.Services[k], p.logger))
 			}
 		}
 
-		// start all processes
-		for i := 0; i < len(service.processes); i++ {
-			service.processes[i].start()
-		}
+		p.processes.Range(func(key, value interface{}) bool {
+			proc := value.(*Process)
+
+			err := proc.start()
+			if err != nil {
+				errCh <- err
+				return false
+			}
+			p.logger.Info("service have started", zap.String("name", key.(string)), zap.String("command", proc.command.String()))
+			return true
+		})
 	}()
 
 	return errCh
 }
 
-func (service *Plugin) Workers() []process.State {
-	service.Lock()
-	defer service.Unlock()
-	states := make([]process.State, 0, len(service.processes))
-	for i := 0; i < len(service.processes); i++ {
-		st, err := generalProcessState(service.processes[i].Pid, service.processes[i].rawCmd)
+func (p *Plugin) Workers() []*process.State {
+	p.Lock()
+	defer p.Unlock()
+	states := make([]*process.State, 0, 5)
+
+	p.processes.Range(func(key, value interface{}) bool {
+		k := key.(string)
+		proc := value.(*Process)
+
+		st, err := generalProcessState(proc.pid, proc.command.String())
 		if err != nil {
-			continue
+			p.logger.Error("get process state", zap.String("name", k), zap.String("command", proc.command.String()))
+			return true
 		}
 		states = append(states, st)
-	}
+
+		return true
+	})
+
 	return states
 }
 
-func (service *Plugin) Stop() error {
-	service.Lock()
-	defer service.Unlock()
+func (p *Plugin) Stop() error {
+	p.processes.Range(func(key, value interface{}) bool {
+		k := key.(string)
+		proc := value.(*Process)
 
-	if len(service.processes) > 0 {
-		for i := 0; i < len(service.processes); i++ {
-			service.processes[i].stop()
-		}
-	}
+		proc.stop()
+
+		p.logger.Info("service have stopped", zap.String("name", k), zap.String("command", proc.service.Command))
+		p.processes.Delete(key)
+		return true
+	})
+
 	return nil
 }
 
 // Name contains service name.
-func (service *Plugin) Name() string {
+func (p *Plugin) Name() string {
 	return PluginName
+}
+
+func (p *Plugin) RPC() interface{} {
+	return &rpc{p: p}
 }

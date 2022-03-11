@@ -1,16 +1,15 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 
-	"github.com/roadrunner-server/errors"
 	"go.uber.org/zap"
 )
 
@@ -19,35 +18,24 @@ type Process struct {
 	sync.Mutex
 	// command to execute
 	command *exec.Cmd
-	// rawCmd from the plugin
-	rawCmd string
-	Pid    int
+	pid     int
 
-	// root plugin error chan
-	errCh chan error
 	// logger
-	log *zap.Logger
+	log     *zap.Logger
+	service *Service
 
-	ExecTimeout     time.Duration
-	RemainAfterExit bool
-	RestartSec      uint64
-	env             Env
+	env    Env
+	cancel context.CancelFunc
 
 	// process start time
-	startTime time.Time
-	stopped   uint64
+	stopped uint64
 }
 
 // NewServiceProcess constructs service process structure
-func NewServiceProcess(restartAfterExit bool, execTimeout time.Duration, restartDelay uint64, command string, env Env, l *zap.Logger, errCh chan error) *Process {
+func NewServiceProcess(service *Service, l *zap.Logger) *Process {
 	return &Process{
-		rawCmd:          command,
-		RestartSec:      restartDelay,
-		ExecTimeout:     execTimeout,
-		RemainAfterExit: restartAfterExit,
-		errCh:           errCh,
-		env:             env,
-		log:             l,
+		service: service,
+		log:     l,
 	}
 }
 
@@ -57,44 +45,67 @@ func (p *Process) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func (p *Process) start() {
+func (p *Process) start() error {
 	p.Lock()
 	defer p.Unlock()
-	const op = errors.Op("processor_start")
 
-	// crate fat-process here
-	p.createProcess()
-
-	// non blocking process start
-	err := p.command.Start()
-	if err != nil {
-		p.errCh <- errors.E(op, err)
-		return
-	}
-
-	// start process waiting routine
-	go p.wait()
-	// execHandler checks for the execTimeout
-	go p.execHandler()
-	// save start time
-	p.startTime = time.Now()
-	p.Pid = p.command.Process.Pid
-}
-
-// create command for the process
-func (p *Process) createProcess() {
 	// cmdArgs contain command arguments if the command in form of: php <command> or ls <command> -i -b
 	var cmdArgs []string
-	cmdArgs = append(cmdArgs, strings.Split(p.rawCmd, " ")...)
-	if len(cmdArgs) < 2 {
-		p.command = exec.Command(p.rawCmd) //nolint:gosec
+	cmdArgs = append(cmdArgs, strings.Split(p.service.Command, " ")...)
+
+	// crate fat-process here
+	if p.service.ExecTimeout > 0 {
+		p.createProcessCtx(cmdArgs)
 	} else {
-		p.command = exec.Command(cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
+		p.createProcess(cmdArgs)
 	}
+
 	p.command.Env = p.setEnv(p.env)
 	// redirect stderr and stdout into the Write function of the process.go
 	p.command.Stderr = p
 	p.command.Stdout = p
+
+	// non blocking process start
+	err := p.command.Start()
+	if err != nil {
+		return err
+	}
+
+	// save start time
+	p.pid = p.command.Process.Pid
+
+	// start process waiting routine
+	go p.wait()
+
+	return nil
+}
+
+// create command for the process with ExecTimeout
+func (p *Process) createProcessCtx(cmdArgs []string) {
+	if len(cmdArgs) < 2 {
+		var ctx context.Context
+		ctx, p.cancel = context.WithTimeout(context.Background(), p.service.ExecTimeout)
+		p.command = exec.CommandContext(ctx, p.service.Command) //nolint:gosec
+	} else {
+		var ctx context.Context
+		ctx, p.cancel = context.WithTimeout(context.Background(), p.service.ExecTimeout)
+		p.command = exec.CommandContext(ctx, cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
+	}
+}
+
+// create command for the process
+func (p *Process) createProcess(cmdArgs []string) {
+	if len(cmdArgs) < 2 {
+		if p.service.ExecTimeout > 0 {
+			var ctx context.Context
+			ctx, p.cancel = context.WithTimeout(context.Background(), p.service.ExecTimeout)
+			p.command = exec.CommandContext(ctx, p.service.Command) //nolint:gosec
+		} else {
+			p.command = exec.Command(p.service.Command) //nolint:gosec
+		}
+	} else {
+		p.command = exec.Command(cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
+	}
 }
 
 // wait process for exit
@@ -102,17 +113,21 @@ func (p *Process) wait() {
 	// Wait error doesn't matter here
 	err := p.command.Wait()
 	if err != nil {
-		p.log.Error("process wait error", zap.Error(err))
+		p.log.Error("wait", zap.Error(err))
 	}
 	// wait for restart delay
-	if p.RemainAfterExit {
+	if p.service.RemainAfterExit {
 		if atomic.LoadUint64(&p.stopped) > 0 {
 			return
 		}
 		// wait for the delay
-		time.Sleep(time.Second * time.Duration(p.RestartSec))
+		time.Sleep(time.Second * time.Duration(p.service.RestartSec))
 		// and start command again
-		p.start()
+		err = p.start()
+		if err != nil {
+			p.log.Error("process start error", zap.Error(err))
+			return
+		}
 	}
 }
 
@@ -121,43 +136,15 @@ func (p *Process) stop() {
 	atomic.StoreUint64(&p.stopped, 1)
 	p.Lock()
 	defer p.Unlock()
+
+	if p.cancel != nil {
+		p.cancel()
+	}
+
 	if p.command != nil {
 		if p.command.Process != nil {
 			_ = p.command.Process.Signal(os.Kill)
 		}
-	}
-}
-
-func (p *Process) execHandler() {
-	tt := time.NewTicker(time.Second)
-	for range tt.C {
-		// lock here, because p.startTime could be changed during the check
-		p.Lock()
-		// if the exec timeout is set
-		if p.ExecTimeout != 0 { //nolint:nestif
-			// if stopped -> kill the process (SIGINT-> SIGKILL) and exit
-			if atomic.CompareAndSwapUint64(&p.stopped, 1, 1) {
-				err := p.command.Process.Signal(syscall.SIGINT)
-				if err != nil {
-					_ = p.command.Process.Signal(syscall.SIGKILL)
-				}
-				tt.Stop()
-				p.Unlock()
-				return
-			}
-
-			// check the running time for the script
-			if time.Now().After(p.startTime.Add(p.ExecTimeout)) {
-				err := p.command.Process.Signal(syscall.SIGINT)
-				if err != nil {
-					_ = p.command.Process.Signal(syscall.SIGKILL)
-				}
-				p.Unlock()
-				tt.Stop()
-				return
-			}
-		}
-		p.Unlock()
 	}
 }
 
