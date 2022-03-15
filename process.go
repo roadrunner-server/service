@@ -23,9 +23,7 @@ type Process struct {
 	// logger
 	log     *zap.Logger
 	service *Service
-
-	env    Env
-	cancel context.CancelFunc
+	cancel  context.CancelFunc
 
 	// process start time
 	stopped uint64
@@ -60,12 +58,12 @@ func (p *Process) start() error {
 		p.createProcess(cmdArgs)
 	}
 
-	p.command.Env = p.setEnv(p.env)
+	p.command.Env = p.setEnv(p.service.Env)
 	// redirect stderr and stdout into the Write function of the process.go
 	p.command.Stderr = p
 	p.command.Stdout = p
 
-	// non blocking process start
+	// non-blocking process start
 	err := p.command.Start()
 	if err != nil {
 		return err
@@ -131,7 +129,7 @@ func (p *Process) wait() {
 	}
 }
 
-// stop can be only sent by the Endure when plugin stopped
+// stop can be only sent by endure when plugin stopped
 func (p *Process) stop() {
 	atomic.StoreUint64(&p.stopped, 1)
 	p.Lock()
@@ -152,7 +150,7 @@ func (p *Process) setEnv(e Env) []string {
 	env := make([]string, 0, len(os.Environ())+len(e))
 	env = append(env, os.Environ()...)
 	for k, v := range e {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
+		env = append(env, fmt.Sprintf("%s=%s", k, os.Expand(v, os.Getenv)))
 	}
 	return env
 }
