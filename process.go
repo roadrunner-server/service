@@ -63,7 +63,7 @@ func (p *Process) start() error {
 	p.command.Stderr = p
 	p.command.Stdout = p
 
-	// non blocking process start
+	// non-blocking process start
 	err := p.command.Start()
 	if err != nil {
 		return err
