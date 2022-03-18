@@ -4,19 +4,13 @@ on:
   push:
     branches:
       - master
-      - beta
-      - stable
     tags-ignore:
       - "**"
     paths-ignore:
       - "**.md"
-      - "**.yaml"
-      - "**.yml"
   pull_request:
     paths-ignore:
       - "**.md"
-      - "**.yaml"
-      - "**.yml"
 
 jobs:
   golang:
@@ -26,7 +20,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        go: ["1.17.8"]
+        go: ["1.18"]
         os: ["ubuntu-latest"]
     steps:
       - name: Set up Go ${{ matrix.go }}
