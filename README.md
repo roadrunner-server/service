@@ -1,5 +1,6 @@
 ### Service plugin
 - `Since RR v2.5.0`
+- Client API [link](https://github.com/spiral/roadrunner-services)
 
 ### Configuration
 
