@@ -1,5 +1,5 @@
 ### Service plugin
-- `Since RR v2.0.5`
+- `Since RR v2.5.0`
 
 ### Configuration
 
