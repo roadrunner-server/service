@@ -61,12 +61,13 @@ func (r *rpc) Terminate(in *serviceV1.Service, out *serviceV1.Response) error {
 		return fmt.Errorf("no such service: %s", in.GetName())
 	}
 
-	proc := procInterface.(*Process)
-	proc.stop()
-	proc = nil
+	procs := procInterface.([]*Process)
+	for i := 0; i < len(procs); i++ {
+		procs[i].stop()
+		procs[i] = nil
+	}
 
 	out.Ok = true
-
 	return nil
 }
 
@@ -86,24 +87,29 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 		return fmt.Errorf("no such service: %s", in.GetName())
 	}
 
-	proc := procInterface.(*Process)
-	proc.stop()
+	procs := procInterface.([]*Process)
 
-	service := &Service{}
-	*service = *(proc).service
-	proc = nil
+	newProcs := make([]*Process, len(procs))
+	for i := 0; i < len(procs); i++ {
+		procs[i].stop()
 
-	newProc := NewServiceProcess(service, r.p.logger)
-	err := newProc.start()
-	if err != nil {
+		service := &Service{}
+		*service = *(procs[i]).service
+		procs[i] = nil
+
+		newProc := NewServiceProcess(service, r.p.logger)
+		err := newProc.start()
+		if err != nil {
+			r.p.processes.Delete(in.GetName())
+			return err
+		}
+
+		newProcs[i] = newProc
 		r.p.processes.Delete(in.GetName())
-		return err
 	}
 
-	r.p.processes.Delete(in.GetName())
-	r.p.processes.Store(in.GetName(), newProc)
+	r.p.processes.Store(in.GetName(), newProcs)
 	out.Ok = true
-
 	return nil
 }
 
@@ -123,27 +129,29 @@ func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 		return fmt.Errorf("no such service: %s", in.GetName())
 	}
 
-	proc := procInterface.(*Process)
-	state, err := generalProcessState(proc.pid, proc.command.String())
-	if err != nil {
-		return err
-	}
+	procs := procInterface.([]*Process)
 
-	out.Pid = int32(state.Pid)
-	out.Command = state.Command
-	out.CPUPercent = float32(state.CPUPercent)
-	out.MemoryUsage = state.MemoryUsage
+	for i := 0; i < len(procs); i++ {
+		state, err := generalProcessState(procs[i].pid, procs[i].command.String())
+		if err != nil {
+			return err
+		}
+
+		out.Pid = int32(state.Pid)
+		out.Command = state.Command
+		out.CPUPercent = float32(state.CPUPercent)
+		out.MemoryUsage = state.MemoryUsage
+	}
 
 	return nil
 }
 
 func (r *rpc) List(_ *serviceV1.Service, out *serviceV1.List) error {
-	r.p.logger.Debug("services list")
-
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	r.p.processes.Range(func(key, value interface{}) bool {
+		r.p.logger.Debug("services list", zap.String("service", key.(string)))
 		out.Services = append(out.Services, key.(string))
 		return true
 	})

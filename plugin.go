@@ -18,7 +18,7 @@ type Plugin struct {
 	cfg    Config
 
 	// all processes attached to the service
-	processes sync.Map // uuid -> *Process
+	processes sync.Map // key -> []*Process
 }
 
 func (p *Plugin) Init(cfg config.Configurer, log *zap.Logger) error {
@@ -50,26 +50,69 @@ func (p *Plugin) Serve() chan error {
 
 		for k := range p.cfg.Services {
 			// create needed number of the processes
+			procs := make([]*Process, p.cfg.Services[k].ProcessNum)
+
 			for i := 0; i < p.cfg.Services[k].ProcessNum; i++ {
 				// create processor structure, which will process all the services
-				p.processes.Store(k, NewServiceProcess(p.cfg.Services[k], p.logger))
+				procs[i] = NewServiceProcess(p.cfg.Services[k], p.logger)
 			}
+
+			// store all the processes idents
+			p.processes.Store(k, procs)
 		}
 
-		p.processes.Range(func(key, value interface{}) bool {
-			proc := value.(*Process)
+		p.processes.Range(func(key, value any) bool {
+			procs := value.([]*Process)
 
-			err := proc.start()
-			if err != nil {
-				errCh <- err
-				return false
+			for i := 0; i < len(procs); i++ {
+				cmdStr := procs[i].service.Command
+				err := procs[i].start()
+				if err != nil {
+					errCh <- err
+					return false
+				}
+				p.logger.Info("service have started", zap.String("name", key.(string)), zap.String("command", cmdStr))
 			}
-			p.logger.Info("service have started", zap.String("name", key.(string)), zap.String("command", proc.command.String()))
+
 			return true
 		})
 	}()
 
 	return errCh
+}
+
+func (p *Plugin) Reset() error {
+	p.processes.Range(func(key, value any) bool {
+		procs := value.([]*Process)
+
+		newProcs := make([]*Process, len(procs))
+
+		for i := 0; i < len(procs); i++ {
+			procs[i].stop()
+
+			service := &Service{}
+			*service = *(procs[i]).service
+
+			newProc := NewServiceProcess(service, p.logger)
+			err := newProc.start()
+			if err != nil {
+				p.logger.Error("unable to start the service", zap.String("name", key.(string)))
+				p.processes.Delete(key)
+				return true
+			}
+
+			newProcs[i] = newProc
+			procs[i].command.Stderr = nil
+			procs[i].command.Stdout = nil
+			procs[i] = nil
+			p.processes.Delete(key)
+		}
+
+		p.processes.Store(key, newProcs)
+		return true
+	})
+
+	return nil
 }
 
 func (p *Plugin) Workers() []*process.State {
@@ -79,14 +122,16 @@ func (p *Plugin) Workers() []*process.State {
 
 	p.processes.Range(func(key, value interface{}) bool {
 		k := key.(string)
-		proc := value.(*Process)
+		procs := value.([]*Process)
 
-		st, err := generalProcessState(proc.pid, proc.command.String())
-		if err != nil {
-			p.logger.Error("get process state", zap.String("name", k), zap.String("command", proc.command.String()))
-			return true
+		for i := 0; i < len(procs); i++ {
+			st, err := generalProcessState(procs[i].pid, procs[i].command.String())
+			if err != nil {
+				p.logger.Error("get process state", zap.String("name", k), zap.String("command", procs[i].command.String()))
+				return true
+			}
+			states = append(states, st)
 		}
-		states = append(states, st)
 
 		return true
 	})
@@ -97,12 +142,15 @@ func (p *Plugin) Workers() []*process.State {
 func (p *Plugin) Stop() error {
 	p.processes.Range(func(key, value interface{}) bool {
 		k := key.(string)
-		proc := value.(*Process)
+		procs := value.([]*Process)
 
-		proc.stop()
+		for i := 0; i < len(procs); i++ {
+			procs[i].stop()
 
-		p.logger.Info("service have stopped", zap.String("name", k), zap.String("command", proc.service.Command))
-		p.processes.Delete(key)
+			p.logger.Info("service have stopped", zap.String("name", k), zap.String("command", procs[i].service.Command))
+			p.processes.Delete(key)
+		}
+
 		return true
 	})
 
