@@ -41,7 +41,7 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 
 	out.Ok = true
 
-	r.p.processes.Store(in.GetName(), proc)
+	r.p.processes.Store(in.GetName(), []*Process{proc})
 	return nil
 }
 
