@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -39,6 +40,9 @@ func NewServiceProcess(service *Service, l *zap.Logger) *Process {
 
 // write message to the log (stderr)
 func (p *Process) Write(b []byte) (int, error) {
+	b = bytes.TrimSpace(b)
+	b = bytes.TrimRight(b, "\n")
+	b = bytes.TrimRight(b, "\t")
 	p.log.Info(string(b))
 	return len(b), nil
 }
