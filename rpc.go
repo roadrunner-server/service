@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	serviceV1 "github.com/roadrunner-server/api/v2/proto/service/v1"
+	serviceV1 "go.buf.build/protocolbuffers/go/roadrunner-server/api/proto/service/v1"
 	"go.uber.org/zap"
 )
 
@@ -139,7 +139,7 @@ func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 
 		out.Pid = int32(state.Pid)
 		out.Command = state.Command
-		out.CPUPercent = float32(state.CPUPercent)
+		out.CpuPercent = float32(state.CPUPercent)
 		out.MemoryUsage = state.MemoryUsage
 	}
 
