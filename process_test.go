@@ -2,8 +2,6 @@ package service
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestSetEnv(t *testing.T) {
@@ -16,6 +14,11 @@ func TestSetEnv(t *testing.T) {
 	val := out[len(out)-1]
 	val2 := out[len(out)-2]
 
-	require.Equal(t, "bar=baz", val)
-	require.Equal(t, "foo=bar", val2)
+	if val != "bar=baz" && val != "foo=bar" {
+		t.Fail()
+	}
+
+	if val2 != "bar=baz" && val2 != "foo=bar" {
+		t.Fail()
+	}
 }
