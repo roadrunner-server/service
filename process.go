@@ -98,13 +98,7 @@ func (p *Process) createProcessCtx(cmdArgs []string) {
 // create command for the process
 func (p *Process) createProcess(cmdArgs []string) {
 	if len(cmdArgs) < 2 {
-		if p.service.ExecTimeout > 0 {
-			var ctx context.Context
-			ctx, p.cancel = context.WithTimeout(context.Background(), p.service.ExecTimeout)
-			p.command = exec.CommandContext(ctx, p.service.Command) //nolint:gosec
-		} else {
-			p.command = exec.Command(p.service.Command) //nolint:gosec
-		}
+		p.command = exec.Command(p.service.Command) //nolint:gosec
 	} else {
 		p.command = exec.Command(cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
 	}

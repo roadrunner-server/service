@@ -89,6 +89,7 @@ func (p *Plugin) Reset() error {
 
 		for i := 0; i < len(procs); i++ {
 			procs[i].stop()
+			p.processes.Delete(key)
 
 			service := &Service{}
 			*service = *(procs[i]).service
@@ -96,16 +97,13 @@ func (p *Plugin) Reset() error {
 			newProc := NewServiceProcess(service, p.logger)
 			err := newProc.start()
 			if err != nil {
+				procs[i] = nil
 				p.logger.Error("unable to start the service", zap.String("name", key.(string)))
-				p.processes.Delete(key)
 				return true
 			}
 
 			newProcs[i] = newProc
-			procs[i].command.Stderr = nil
-			procs[i].command.Stdout = nil
 			procs[i] = nil
-			p.processes.Delete(key)
 		}
 
 		p.processes.Store(key, newProcs)
