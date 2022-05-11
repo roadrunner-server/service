@@ -16,26 +16,21 @@ service:
     # Default: none, required.
     command: php tests/plugins/service/test_files/loop.php
 
-    # Endings for the stderr/stdout output
-    #
-    # Default: "\n". Available options: any.
-    line_ending: "\n"
-
     # Number of copies (processes) to start per command.
     #
     # Default: 1
-
     process_num: 1
+    
     # Allowed execute timeout.
     #
     # Default: 0 (infinity), can be 1s, 2m, 2h (seconds, minutes, hours)
-
     exec_timeout: 0
+    
     # Remain process after exit. In other words, restart process after exit with any exit code.
     #
     # Default: "false"
-
     remain_after_exit: true
+    
     # Number of seconds to wait before process restart.
     #
     # Default: 30
@@ -56,12 +51,6 @@ service:
     #
     # Default: none, required.
     command: "./some_executable"
-
-    # Endings for the stderr/stdout output
-    #
-    # Default: "\n". Available options: any.
-   
-    line_ending: "\n"
 
     # Number of copies (processes) to start per command.
     #
