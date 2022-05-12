@@ -40,10 +40,7 @@ func NewServiceProcess(service *Service, l *zap.Logger) *Process {
 
 // write message to the log (stderr)
 func (p *Process) Write(b []byte) (int, error) {
-	b = bytes.TrimSpace(b)
-	b = bytes.TrimRight(b, "\n")
-	b = bytes.TrimRight(b, "\t")
-	p.log.Info(string(b))
+	p.log.Info(string(bytes.TrimRight(bytes.TrimRight(bytes.TrimSpace(b), "\n"), "\t")))
 	return len(b), nil
 }
 
