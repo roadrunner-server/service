@@ -32,9 +32,11 @@ type Process struct {
 
 // NewServiceProcess constructs service process structure
 func NewServiceProcess(service *Service, l *zap.Logger) *Process {
+	log := new(zap.Logger)
+	*log = *l
 	return &Process{
 		service: service,
-		log:     l,
+		log:     log,
 	}
 }
 

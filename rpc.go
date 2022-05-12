@@ -64,7 +64,6 @@ func (r *rpc) Terminate(in *serviceV1.Service, out *serviceV1.Response) error {
 	procs := procInterface.([]*Process)
 	for i := 0; i < len(procs); i++ {
 		procs[i].stop()
-		procs[i] = nil
 	}
 
 	out.Ok = true
@@ -95,7 +94,6 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 
 		service := &Service{}
 		*service = *(procs[i]).service
-		procs[i] = nil
 
 		newProc := NewServiceProcess(service, r.p.logger)
 		err := newProc.start()

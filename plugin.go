@@ -12,7 +12,7 @@ import (
 const PluginName string = "service"
 
 type Plugin struct {
-	sync.Mutex
+	mu sync.Mutex
 
 	logger *zap.Logger
 	cfg    Config
@@ -45,8 +45,8 @@ func (p *Plugin) Serve() chan error {
 	// start processing
 	go func() {
 		// lock here, because Stop command might be invoked during the Serve
-		p.Lock()
-		defer p.Unlock()
+		p.mu.Lock()
+		defer p.mu.Unlock()
 
 		for k := range p.cfg.Services {
 			// create needed number of the processes
@@ -97,13 +97,11 @@ func (p *Plugin) Reset() error {
 			newProc := NewServiceProcess(service, p.logger)
 			err := newProc.start()
 			if err != nil {
-				procs[i] = nil
 				p.logger.Error("unable to start the service", zap.String("name", key.(string)))
 				return true
 			}
 
 			newProcs[i] = newProc
-			procs[i] = nil
 		}
 
 		p.processes.Store(key, newProcs)
@@ -114,8 +112,8 @@ func (p *Plugin) Reset() error {
 }
 
 func (p *Plugin) Workers() []*process.State {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	states := make([]*process.State, 0, 5)
 
 	p.processes.Range(func(key, value interface{}) bool {
