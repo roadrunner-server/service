@@ -3,10 +3,10 @@ module github.com/roadrunner-server/service/v2
 go 1.18
 
 require (
-	github.com/roadrunner-server/api/v2 v2.17.1
+	github.com/roadrunner-server/api/v2 v2.18.0
 	github.com/roadrunner-server/errors v1.1.2
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	go.buf.build/protocolbuffers/go/roadrunner-server/api v1.2.3
+	go.buf.build/protocolbuffers/go/roadrunner-server/api v1.2.5
 	go.uber.org/zap v1.21.0
 )
 
