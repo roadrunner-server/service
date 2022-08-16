@@ -11,8 +11,6 @@ github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/roadrunner-server/api/v2 v2.20.1 h1:j6tIrIgxOLxa3ONCqYe4LfS0yIcch4QEzLcLmzcCkBQ=
-github.com/roadrunner-server/api/v2 v2.20.1/go.mod h1:IlmguovM8ExuTctvmqitx8+cdfadzHi15fY5Njl55Kk=
 github.com/roadrunner-server/api/v2 v2.21.0 h1:OtzTLvZt9ENgfWtR9eAomMrF1ZwDkTj95Upb/AkvVD0=
 github.com/roadrunner-server/api/v2 v2.21.0/go.mod h1:i6+EpU/ZSZIPZNvM/Tk8lobqVSNQ6+iOe4LSBO2iORo=
 github.com/roadrunner-server/errors v1.2.0 h1:qBmNXt8Iex9QnYTjCkbJKsBZu2EtYkQCM06GUDcQBbI=
@@ -31,8 +29,6 @@ github.com/tklauser/numcpus v0.5.0 h1:ooe7gN0fg6myJ0EKoTAf5hebTZrH52px3New/D9iJ+
 github.com/tklauser/numcpus v0.5.0/go.mod h1:OGzpTxpcIMNGYQdit2BYL1pvk/dSOaJWjKoflh+RQjo=
 github.com/yusufpapurcu/wmi v1.2.2 h1:KBNDSne4vP5mbSWnJbO+51IMOXJB67QiYCSBrubbPRg=
 github.com/yusufpapurcu/wmi v1.2.2/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
-go.buf.build/protocolbuffers/go/roadrunner-server/api v1.3.11 h1:o3u17XK/ku9zZajqgRXOZHF66h92N2QAMFrAkzM0xnM=
-go.buf.build/protocolbuffers/go/roadrunner-server/api v1.3.11/go.mod h1:CfIAvR+W2N+Y0WXMzwT80Eh83CmBPWplgFQDA5HftC4=
 go.buf.build/protocolbuffers/go/roadrunner-server/api v1.3.12 h1:FYKxBvxYcSr60jI/n/tclPA0H6zk0jUXmL2fWBiQswg=
 go.buf.build/protocolbuffers/go/roadrunner-server/api v1.3.12/go.mod h1:CfIAvR+W2N+Y0WXMzwT80Eh83CmBPWplgFQDA5HftC4=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
