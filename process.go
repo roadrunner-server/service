@@ -147,7 +147,7 @@ func (p *Process) setEnv(e Env) []string {
 	env := make([]string, 0, len(os.Environ())+len(e))
 	env = append(env, os.Environ()...)
 	for k, v := range e {
-		env = append(env, fmt.Sprintf("%s=%s", k, os.Expand(v, os.Getenv)))
+		env = append(env, fmt.Sprintf("%s=%s", strings.ToUpper(k), os.Expand(v, os.Getenv)))
 	}
 	return env
 }

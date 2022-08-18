@@ -14,11 +14,11 @@ func TestSetEnv(t *testing.T) {
 	val := out[len(out)-1]
 	val2 := out[len(out)-2]
 
-	if val != "bar=baz" && val != "foo=bar" {
+	if val != "BAR=baz" && val != "FOO=bar" {
 		t.Fail()
 	}
 
-	if val2 != "bar=baz" && val2 != "foo=bar" {
+	if val2 != "BAR=baz" && val2 != "FOO=bar" {
 		t.Fail()
 	}
 }
