@@ -135,10 +135,10 @@ func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 			return err
 		}
 
-		out.Pid = int32(state.Pid)
-		out.Command = state.Command
-		out.CpuPercent = float32(state.CPUPercent)
-		out.MemoryUsage = state.MemoryUsage
+		out.Pid = int32(state.Pid_)
+		out.Command = state.Command_
+		out.CpuPercent = float32(state.CPUPercent_)
+		out.MemoryUsage = state.MemoryUsage_
 	}
 
 	return nil

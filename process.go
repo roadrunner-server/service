@@ -19,7 +19,7 @@ type Process struct {
 	sync.Mutex
 	// command to execute
 	command *exec.Cmd
-	pid     int
+	pid     int64
 
 	// logger
 	log     *zap.Logger
@@ -73,7 +73,7 @@ func (p *Process) start() error {
 	}
 
 	// save start time
-	p.pid = p.command.Process.Pid
+	p.pid = int64(p.command.Process.Pid)
 
 	// start process waiting routine
 	go p.wait()
