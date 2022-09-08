@@ -1,8 +1,8 @@
 package service
 
 import (
+	rrProcess "github.com/roadrunner-server/api/v2/state/process"
 	"github.com/roadrunner-server/errors"
-	rrProcess "github.com/roadrunner-server/sdk/v2/state/process"
 	"github.com/shirou/gopsutil/process"
 )
 
@@ -19,9 +19,9 @@ func generalProcessState(pid int64, command string) (*rrProcess.State, error) {
 	}
 
 	return &rrProcess.State{
-		CPUPercent_:  percent,
-		Pid_:         pid,
-		MemoryUsage_: i.RSS,
-		Command_:     command,
+		CPUPercent:  percent,
+		Pid:         pid,
+		MemoryUsage: i.RSS,
+		Command:     command,
 	}, nil
 }

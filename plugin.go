@@ -111,10 +111,10 @@ func (p *Plugin) Reset() error {
 	return nil
 }
 
-func (p *Plugin) Workers() []process.State {
+func (p *Plugin) Workers() []*process.State {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	states := make([]process.State, 0, 5)
+	states := make([]*process.State, 0, 5)
 
 	p.processes.Range(func(key, value interface{}) bool {
 		k := key.(string)
