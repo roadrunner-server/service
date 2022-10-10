@@ -3,9 +3,8 @@ package service
 import (
 	"sync"
 
-	"github.com/roadrunner-server/api/v2/plugins/config"
-	"github.com/roadrunner-server/api/v2/state/process"
 	"github.com/roadrunner-server/errors"
+	"github.com/roadrunner-server/sdk/v3/state/process"
 	"go.uber.org/zap"
 )
 
@@ -21,7 +20,15 @@ type Plugin struct {
 	processes sync.Map // key -> []*Process
 }
 
-func (p *Plugin) Init(cfg config.Configurer, log *zap.Logger) error {
+type Configurer interface {
+	// UnmarshalKey takes a single key and unmarshal it into a Struct.
+	UnmarshalKey(name string, out any) error
+
+	// Has checks if config section exists.
+	Has(name string) bool
+}
+
+func (p *Plugin) Init(cfg Configurer, log *zap.Logger) error {
 	const op = errors.Op("service_plugin_init")
 	if !cfg.Has(PluginName) {
 		return errors.E(errors.Disabled)
