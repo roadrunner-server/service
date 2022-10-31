@@ -112,7 +112,7 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 	return nil
 }
 
-func (r *rpc) Status(in *serviceV1.Service, out *[]*serviceV1.Status) error {
+func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Statuses) error {
 	r.p.logger.Debug("service status", zap.String("name", in.GetName()))
 
 	r.mu.RLock()
@@ -136,7 +136,7 @@ func (r *rpc) Status(in *serviceV1.Service, out *[]*serviceV1.Status) error {
 			/*
 				in case of error, just add the error status + common info (pid, command)
 			*/
-			*out = append(*out, &serviceV1.Status{
+			out.Status = append(out.Status, &serviceV1.Status{
 				CpuPercent:  0,
 				Pid:         int32(procs[i].pid),
 				MemoryUsage: 0,
@@ -150,7 +150,7 @@ func (r *rpc) Status(in *serviceV1.Service, out *[]*serviceV1.Status) error {
 			continue
 		}
 
-		*out = append(*out, &serviceV1.Status{
+		out.Status = append(out.Status, &serviceV1.Status{
 			CpuPercent:  float32(state.CPUPercent),
 			Pid:         int32(state.Pid),
 			MemoryUsage: state.MemoryUsage,
