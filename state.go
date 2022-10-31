@@ -21,6 +21,7 @@ func generalProcessState(pid int64, command string) (*rrProcess.State, error) {
 	return &rrProcess.State{
 		CPUPercent:  percent,
 		Pid:         pid,
+		Status:      1,
 		MemoryUsage: i.RSS,
 		Command:     command,
 	}, nil
