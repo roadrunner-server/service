@@ -6,6 +6,7 @@ import (
 	"time"
 
 	serviceV1 "go.buf.build/protocolbuffers/go/roadrunner-server/api/proto/service/v1"
+	"go.buf.build/protocolbuffers/go/roadrunner-server/api/proto/shared"
 	"go.uber.org/zap"
 )
 
@@ -111,7 +112,7 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 	return nil
 }
 
-func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
+func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Statuses) error {
 	r.p.logger.Debug("service status", zap.String("name", in.GetName()))
 
 	r.mu.RLock()
@@ -132,13 +133,30 @@ func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 	for i := 0; i < len(procs); i++ {
 		state, err := generalProcessState(procs[i].pid, procs[i].command.String())
 		if err != nil {
-			return err
+			/*
+				in case of error, just add the error status + common info (pid, command)
+			*/
+			out.Status = append(out.Status, &serviceV1.Status{
+				CpuPercent:  0,
+				Pid:         int32(procs[i].pid),
+				MemoryUsage: 0,
+				Command:     procs[i].command.String(),
+				Status: &shared.Status{
+					Code:    0,
+					Message: err.Error(),
+				},
+			})
+
+			continue
 		}
 
-		out.Pid = int32(state.Pid)
-		out.Command = state.Command
-		out.CpuPercent = float32(state.CPUPercent)
-		out.MemoryUsage = state.MemoryUsage
+		out.Status = append(out.Status, &serviceV1.Status{
+			CpuPercent:  float32(state.CPUPercent),
+			Pid:         int32(state.Pid),
+			MemoryUsage: state.MemoryUsage,
+			Command:     state.Command,
+			Status:      nil,
+		})
 	}
 
 	return nil
