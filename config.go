@@ -8,6 +8,7 @@ type Env map[string]string
 // Service represents particular service configuration
 type Service struct {
 	Command         string        `mapstructure:"command"`
+	UseServiceName  bool          `mapstructure:"use_service_name"`
 	ProcessNum      int           `mapstructure:"process_num"`
 	ExecTimeout     time.Duration `mapstructure:"exec_timeout"`
 	RemainAfterExit bool          `mapstructure:"remain_after_exit"`

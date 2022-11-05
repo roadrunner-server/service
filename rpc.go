@@ -33,7 +33,7 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 		RemainAfterExit: in.GetRemainAfterExit(),
 		RestartSec:      in.GetRestartSec(),
 		Env:             in.GetEnv(),
-	}, r.p.logger)
+	}, in.GetName(), r.p.logger)
 
 	err := proc.start()
 	if err != nil {
@@ -96,7 +96,7 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 		service := &Service{}
 		*service = *(procs[i]).service
 
-		newProc := NewServiceProcess(service, r.p.logger)
+		newProc := NewServiceProcess(service, in.GetName(), r.p.logger)
 		err := newProc.start()
 		if err != nil {
 			r.p.processes.Delete(in.GetName())
