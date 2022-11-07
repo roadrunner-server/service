@@ -114,7 +114,7 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 
 // Status returns status for the service
 // Deprecated: use Statuses to get correct info
-func (r *rpc) Status(in *serviceV1.Service, out *[]*serviceV1.Status) error {
+func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 	r.p.logger.Debug("service status", zap.String("name", in.GetName()))
 
 	r.mu.RLock()
@@ -135,30 +135,13 @@ func (r *rpc) Status(in *serviceV1.Service, out *[]*serviceV1.Status) error {
 	for i := 0; i < len(procs); i++ {
 		state, err := generalProcessState(procs[i].pid, procs[i].command.String())
 		if err != nil {
-			/*
-				in case of error, just add the error status + common info (pid, command)
-			*/
-			*out = append(*out, &serviceV1.Status{
-				CpuPercent:  0,
-				Pid:         int32(procs[i].pid),
-				MemoryUsage: 0,
-				Command:     procs[i].command.String(),
-				Status: &shared.Status{
-					Code:    0,
-					Message: err.Error(),
-				},
-			})
-
-			continue
+			return err
 		}
 
-		*out = append(*out, &serviceV1.Status{
-			CpuPercent:  float32(state.CPUPercent),
-			Pid:         int32(state.Pid),
-			MemoryUsage: state.MemoryUsage,
-			Command:     state.Command,
-			Status:      nil,
-		})
+		out.Pid = int32(state.Pid)
+		out.Command = state.Command
+		out.CpuPercent = float32(state.CPUPercent)
+		out.MemoryUsage = state.MemoryUsage
 	}
 
 	return nil
