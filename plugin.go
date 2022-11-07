@@ -61,7 +61,7 @@ func (p *Plugin) Serve() chan error {
 
 			for i := 0; i < p.cfg.Services[k].ProcessNum; i++ {
 				// create processor structure, which will process all the services
-				procs[i] = NewServiceProcess(p.cfg.Services[k], p.logger)
+				procs[i] = NewServiceProcess(p.cfg.Services[k], k, p.logger)
 			}
 
 			// store all the processes idents
@@ -101,7 +101,7 @@ func (p *Plugin) Reset() error {
 			service := &Service{}
 			*service = *(procs[i]).service
 
-			newProc := NewServiceProcess(service, p.logger)
+			newProc := NewServiceProcess(service, key.(string), p.logger)
 			err := newProc.start()
 			if err != nil {
 				p.logger.Error("unable to start the service", zap.String("name", key.(string)))

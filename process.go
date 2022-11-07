@@ -31,9 +31,13 @@ type Process struct {
 }
 
 // NewServiceProcess constructs service process structure
-func NewServiceProcess(service *Service, l *zap.Logger) *Process {
+func NewServiceProcess(service *Service, name string, l *zap.Logger) *Process {
 	log := new(zap.Logger)
 	*log = *l
+	if service.UseServiceName {
+		log = log.Named(name)
+	}
+
 	return &Process{
 		service: service,
 		log:     log,

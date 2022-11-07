@@ -33,7 +33,7 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 		RemainAfterExit: in.GetRemainAfterExit(),
 		RestartSec:      in.GetRestartSec(),
 		Env:             in.GetEnv(),
-	}, r.p.logger)
+	}, in.GetName(), r.p.logger)
 
 	err := proc.start()
 	if err != nil {
@@ -96,7 +96,7 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 		service := &Service{}
 		*service = *(procs[i]).service
 
-		newProc := NewServiceProcess(service, r.p.logger)
+		newProc := NewServiceProcess(service, in.GetName(), r.p.logger)
 		err := newProc.start()
 		if err != nil {
 			r.p.processes.Delete(in.GetName())
@@ -112,7 +112,60 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 	return nil
 }
 
-func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Statuses) error {
+// Status returns status for the service
+// Deprecated: use Statuses to get correct info
+func (r *rpc) Status(in *serviceV1.Service, out *[]*serviceV1.Status) error {
+	r.p.logger.Debug("service status", zap.String("name", in.GetName()))
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	_, ok := r.p.processes.Load(in.GetName())
+	if !ok {
+		return fmt.Errorf("the service with %s name doesn't exist", in.GetName())
+	}
+
+	procInterface, ok := r.p.processes.Load(in.GetName())
+	if !ok {
+		return fmt.Errorf("no such service: %s", in.GetName())
+	}
+
+	procs := procInterface.([]*Process)
+
+	for i := 0; i < len(procs); i++ {
+		state, err := generalProcessState(procs[i].pid, procs[i].command.String())
+		if err != nil {
+			/*
+				in case of error, just add the error status + common info (pid, command)
+			*/
+			*out = append(*out, &serviceV1.Status{
+				CpuPercent:  0,
+				Pid:         int32(procs[i].pid),
+				MemoryUsage: 0,
+				Command:     procs[i].command.String(),
+				Status: &shared.Status{
+					Code:    0,
+					Message: err.Error(),
+				},
+			})
+
+			continue
+		}
+
+		*out = append(*out, &serviceV1.Status{
+			CpuPercent:  float32(state.CPUPercent),
+			Pid:         int32(state.Pid),
+			MemoryUsage: state.MemoryUsage,
+			Command:     state.Command,
+			Status:      nil,
+		})
+	}
+
+	return nil
+}
+
+// Statuses returns status for the service with all processes
+func (r *rpc) Statuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
 	r.p.logger.Debug("service status", zap.String("name", in.GetName()))
 
 	r.mu.RLock()
