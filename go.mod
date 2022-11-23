@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/roadrunner-server/errors v1.2.0
-	github.com/roadrunner-server/sdk/v3 v3.0.0-rc.2
+	github.com/roadrunner-server/sdk/v3 v3.0.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	go.buf.build/protocolbuffers/go/roadrunner-server/api v1.3.27
 	go.uber.org/zap v1.23.0
