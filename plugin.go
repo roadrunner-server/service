@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"sync"
 
 	"github.com/roadrunner-server/errors"
@@ -23,12 +24,15 @@ type Plugin struct {
 type Configurer interface {
 	// UnmarshalKey takes a single key and unmarshal it into a Struct.
 	UnmarshalKey(name string, out any) error
-
 	// Has checks if config section exists.
 	Has(name string) bool
 }
 
-func (p *Plugin) Init(cfg Configurer, log *zap.Logger) error {
+type Logger interface {
+	NamedLogger(name string) *zap.Logger
+}
+
+func (p *Plugin) Init(cfg Configurer, log Logger) error {
 	const op = errors.Op("service_plugin_init")
 	if !cfg.Has(PluginName) {
 		return errors.E(errors.Disabled)
@@ -41,7 +45,7 @@ func (p *Plugin) Init(cfg Configurer, log *zap.Logger) error {
 	// init default parameters if not set by user
 	p.cfg.InitDefault()
 	// save the logger
-	p.logger = log
+	p.logger = log.NamedLogger(PluginName)
 
 	return nil
 }
@@ -142,7 +146,7 @@ func (p *Plugin) Workers() []*process.State {
 	return states
 }
 
-func (p *Plugin) Stop() error {
+func (p *Plugin) Stop(context.Context) error {
 	p.processes.Range(func(key, value interface{}) bool {
 		k := key.(string)
 		procs := value.([]*Process)
@@ -165,6 +169,6 @@ func (p *Plugin) Name() string {
 	return PluginName
 }
 
-func (p *Plugin) RPC() interface{} {
+func (p *Plugin) RPC() any {
 	return &rpc{p: p}
 }
