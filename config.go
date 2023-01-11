@@ -1,6 +1,9 @@
 package service
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 // Env variables type alias
 type Env map[string]string
@@ -21,11 +24,15 @@ type Config struct {
 	Services map[string]*Service `mapstructure:"service"`
 }
 
-func (c *Config) InitDefault() {
+func (c *Config) InitDefault() error {
 	if len(c.Services) > 0 {
 		for k, v := range c.Services {
 			val := c.Services[k]
 			c.Services[k] = val
+
+			if v.ExecTimeout == 0 {
+				return errors.New("exec_timeout should be more 0")
+			}
 
 			if v.ProcessNum == 0 {
 				val := c.Services[k]
