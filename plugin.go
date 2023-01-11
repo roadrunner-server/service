@@ -39,10 +39,7 @@ func (p *Plugin) Init(cfg Configurer, log *zap.Logger) error {
 	}
 
 	// init default parameters if not set by user
-	err = p.cfg.InitDefault()
-	if err != nil {
-		return err
-	}
+	p.cfg.InitDefault()
 	// save the logger
 	p.logger = log
 
