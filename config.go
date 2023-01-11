@@ -46,4 +46,6 @@ func (c *Config) InitDefault() error {
 			}
 		}
 	}
+
+	return nil
 }
