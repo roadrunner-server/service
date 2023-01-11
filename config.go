@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"time"
 )
 
@@ -24,15 +23,11 @@ type Config struct {
 	Services map[string]*Service `mapstructure:"service"`
 }
 
-func (c *Config) InitDefault() error {
+func (c *Config) InitDefault() {
 	if len(c.Services) > 0 {
 		for k, v := range c.Services {
 			val := c.Services[k]
 			c.Services[k] = val
-
-			if v.ExecTimeout == 0 {
-				return errors.New("exec_timeout should be more 0")
-			}
 
 			if v.ProcessNum == 0 {
 				val := c.Services[k]
@@ -46,6 +41,4 @@ func (c *Config) InitDefault() error {
 			}
 		}
 	}
-
-	return nil
 }
