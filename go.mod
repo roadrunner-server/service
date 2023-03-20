@@ -12,7 +12,7 @@ require (
 
 require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
-	github.com/goccy/go-json v0.10.1 // indirect
+	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/roadrunner-server/goridge/v3 v3.6.2 // indirect
 	github.com/roadrunner-server/tcplisten v1.3.0 // indirect
