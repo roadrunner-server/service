@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"go.uber.org/zap"
@@ -27,7 +28,8 @@ type Process struct {
 	cancel  context.CancelFunc
 
 	// process start time
-	stopped uint64
+	stopped  uint64
+	sigintCh chan struct{}
 }
 
 // NewServiceProcess constructs service process structure
@@ -39,8 +41,9 @@ func NewServiceProcess(service *Service, name string, l *zap.Logger) *Process {
 	}
 
 	return &Process{
-		service: service,
-		log:     log,
+		service:  service,
+		log:      log,
+		sigintCh: make(chan struct{}, 1),
 	}
 }
 
@@ -114,6 +117,9 @@ func (p *Process) wait() {
 	if err != nil {
 		p.log.Error("wait", zap.Error(err))
 	}
+
+	p.sigintCh <- struct{}{}
+
 	// wait for restart delay
 	if p.service.RemainAfterExit {
 		if atomic.LoadUint64(&p.stopped) > 0 {
@@ -140,10 +146,21 @@ func (p *Process) stop() {
 		p.cancel()
 	}
 
-	if p.command != nil {
-		if p.command.Process != nil {
-			_ = p.command.Process.Signal(os.Kill)
-		}
+	if p.command == nil || p.command.Process == nil {
+		return
+	}
+
+	_ = p.command.Process.Signal(syscall.SIGINT)
+
+	ta := time.NewTimer(time.Second * 5)
+	select {
+	case <-ta.C:
+		_ = p.command.Process.Signal(syscall.SIGKILL)
+		ta.Stop()
+		<-p.sigintCh
+	case <-p.sigintCh:
+		ta.Stop()
+		return
 	}
 }
 
