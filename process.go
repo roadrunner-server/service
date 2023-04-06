@@ -118,7 +118,12 @@ func (p *Process) wait() {
 		p.log.Error("wait", zap.Error(err))
 	}
 
-	p.sigintCh <- struct{}{}
+	// select is optional here
+	select {
+	case p.sigintCh <- struct{}{}:
+	default:
+		break
+	}
 
 	// wait for restart delay
 	if p.service.RemainAfterExit {
@@ -157,7 +162,12 @@ func (p *Process) stop() {
 	case <-ta.C:
 		_ = p.command.Process.Signal(syscall.SIGKILL)
 		ta.Stop()
-		<-p.sigintCh
+
+		select {
+		case <-p.sigintCh:
+		default:
+			break
+		}
 	case <-p.sigintCh:
 		ta.Stop()
 		return
