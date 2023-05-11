@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/roadrunner-server/errors v1.2.0
-	github.com/roadrunner-server/sdk/v4 v4.2.2
+	github.com/roadrunner-server/sdk/v4 v4.2.3
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	go.buf.build/protocolbuffers/go/roadrunner-server/api v1.3.39
 	go.uber.org/zap v1.24.0
