@@ -93,6 +93,10 @@ func (p *Plugin) Serve() chan error {
 	return errCh
 }
 
+func (p *Plugin) Weight() uint {
+	return 10
+}
+
 func (p *Plugin) Reset() error {
 	p.processes.Range(func(key, value any) bool {
 		procs := value.([]*Process)
