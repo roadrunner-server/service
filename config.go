@@ -29,7 +29,7 @@ func (c *Config) InitDefault() {
 			val := c.Services[k]
 			c.Services[k] = val
 
-			if v.ProcessNum == 0 {
+			if v.ProcessNum <= 0 {
 				val := c.Services[k]
 				val.ProcessNum = 1
 				c.Services[k] = val
