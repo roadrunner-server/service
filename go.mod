@@ -17,7 +17,7 @@ require (
 	github.com/roadrunner-server/goridge/v3 v3.6.2 // indirect
 	github.com/roadrunner-server/tcplisten v1.3.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
-	github.com/tklauser/numcpus v0.6.0 // indirect
+	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
