@@ -83,7 +83,7 @@ func (p *Plugin) Serve() chan error {
 					errCh <- err
 					return false
 				}
-				p.logger.Info("service have started", zap.String("name", key.(string)), zap.String("command", cmdStr))
+				p.logger.Info("service was started", zap.String("name", key.(string)), zap.String("command", cmdStr))
 			}
 
 			return true
@@ -159,7 +159,7 @@ func (p *Plugin) Stop(context.Context) error {
 		for i := 0; i < len(procs); i++ {
 			procs[i].stop()
 
-			p.logger.Info("service have stopped", zap.String("name", k), zap.String("command", procs[i].service.Command))
+			p.logger.Info("service was stopped", zap.String("name", k), zap.String("command", procs[i].service.Command))
 			p.processes.Delete(key)
 		}
 
