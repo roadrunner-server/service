@@ -16,7 +16,7 @@ type rpc struct {
 }
 
 func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
-	r.p.logger.Debug("create service", zap.String("name", in.GetName()), zap.String("command", in.GetCommand()))
+	r.p.logger.Debug("create service", zap.String("name", in.GetName()), zap.Uint64("restart_sec", in.GetRestartSec()), zap.String("command", in.GetCommand()), zap.Int64("process number", in.GetProcessNum()))
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -26,23 +26,38 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 		return fmt.Errorf("the service with %s name already exists", in.GetName())
 	}
 
-	proc := NewServiceProcess(&Service{
-		Command:         in.GetCommand(),
-		ProcessNum:      int(in.GetProcessNum()),
-		ExecTimeout:     time.Second * time.Duration(in.GetExecTimeout()),
-		RemainAfterExit: in.GetRemainAfterExit(),
-		RestartSec:      in.GetRestartSec(),
-		Env:             in.GetEnv(),
-	}, in.GetName(), r.p.logger)
+	procs := make([]*Process, 0, in.GetProcessNum())
 
-	err := proc.start()
-	if err != nil {
-		return err
+	for i := 0; i < int(in.GetProcessNum()); i++ {
+		// create processor structure, which will process all the services
+		proc := NewServiceProcess(&Service{
+			Command:         in.GetCommand(),
+			ProcessNum:      int(in.GetProcessNum()),
+			ExecTimeout:     time.Second * time.Duration(in.GetExecTimeout()),
+			RemainAfterExit: in.GetRemainAfterExit(),
+			RestartSec:      in.GetRestartSec(),
+			Env:             in.GetEnv(),
+		}, in.GetName(), r.p.logger)
+
+		err := proc.start()
+		if err != nil {
+			// if some process from the group failed -> deallocate the whole group
+			if len(procs) > 0 {
+				r.p.logger.Warn("stopping already allocated processes")
+				for i := 0; i < len(procs); i++ {
+					procs[i].stop()
+				}
+			}
+			return err
+		}
+
+		procs = append(procs, proc)
 	}
 
-	out.Ok = true
+	// store all the processes idents
+	r.p.processes.Store(in.GetName(), procs)
 
-	r.p.processes.Store(in.GetName(), []*Process{proc})
+	out.Ok = true
 	return nil
 }
 
