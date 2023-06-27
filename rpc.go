@@ -26,7 +26,7 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 		return fmt.Errorf("the service with %s name already exists", in.GetName())
 	}
 
-	procs := make([]*Process, in.GetProcessNum())
+	procs := make([]*Process, 0, in.GetProcessNum())
 
 	for i := 0; i < int(in.GetProcessNum()); i++ {
 		// create processor structure, which will process all the services
@@ -41,10 +41,17 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 
 		err := proc.start()
 		if err != nil {
+			// if some process from the group failed -> deallocate the whole group
+			if len(procs) > 0 {
+				r.p.logger.Warn("stopping already allocated processes")
+				for i := 0; i < len(procs); i++ {
+					procs[i].stop()
+				}
+			}
 			return err
 		}
 
-		procs[i] = proc
+		procs = append(procs, proc)
 	}
 
 	// store all the processes idents
