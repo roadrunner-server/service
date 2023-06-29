@@ -40,6 +40,15 @@ func NewServiceProcess(service *Service, name string, l *zap.Logger) *Process {
 		log = log.Named(name)
 	}
 
+	// set defaults
+	if service.RestartSec == 0 {
+		service.RestartSec = 30
+	}
+
+	if service.TimeoutStopSec == 0 {
+		service.TimeoutStopSec = 5
+	}
+
 	return &Process{
 		service:  service,
 		log:      log,
@@ -157,7 +166,7 @@ func (p *Process) stop() {
 
 	_ = p.command.Process.Signal(syscall.SIGINT)
 
-	ta := time.NewTimer(time.Second * 5)
+	ta := time.NewTimer(time.Second * time.Duration(p.service.TimeoutStopSec))
 	select {
 	case <-ta.C:
 		_ = p.command.Process.Signal(syscall.SIGKILL)

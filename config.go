@@ -15,6 +15,7 @@ type Service struct {
 	ExecTimeout     time.Duration `mapstructure:"exec_timeout"`
 	RemainAfterExit bool          `mapstructure:"remain_after_exit"`
 	RestartSec      uint64        `mapstructure:"restart_sec"`
+	TimeoutStopSec  uint64        `mapstructure:"timeout_stop_sec"`
 	Env             Env           `mapstructure:"env"`
 }
 
@@ -38,6 +39,11 @@ func (c *Config) InitDefault() {
 				val := c.Services[k]
 				val.RestartSec = 30
 				c.Services[k] = val
+			}
+
+			// default 5 seconds
+			if v.TimeoutStopSec == 0 {
+				v.TimeoutStopSec = 5
 			}
 		}
 	}

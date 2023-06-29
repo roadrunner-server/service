@@ -18,6 +18,10 @@ type rpc struct {
 func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 	r.p.logger.Debug("create service", zap.String("name", in.GetName()), zap.Uint64("restart_sec", in.GetRestartSec()), zap.String("command", in.GetCommand()), zap.Int64("process number", in.GetProcessNum()))
 
+	if in.GetProcessNum() == 0 {
+		return fmt.Errorf("the service with %s name should have at least 1 process", in.GetName())
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -36,6 +40,8 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 			ExecTimeout:     time.Second * time.Duration(in.GetExecTimeout()),
 			RemainAfterExit: in.GetRemainAfterExit(),
 			RestartSec:      in.GetRestartSec(),
+			UseServiceName:  in.GetServiceNameInLogs(),
+			TimeoutStopSec:  in.GetTimeoutStopSec(),
 			Env:             in.GetEnv(),
 		}, in.GetName(), r.p.logger)
 
