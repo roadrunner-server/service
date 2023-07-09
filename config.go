@@ -16,6 +16,7 @@ type Service struct {
 	RemainAfterExit bool          `mapstructure:"remain_after_exit"`
 	RestartSec      uint64        `mapstructure:"restart_sec"`
 	Env             Env           `mapstructure:"env"`
+	User            string        `mapstructure:"user"`
 }
 
 // Config for the services

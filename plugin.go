@@ -77,12 +77,12 @@ func (p *Plugin) Serve() chan error {
 			procs := value.([]*Process)
 
 			for i := 0; i < len(procs); i++ {
-				cmdStr := procs[i].service.Command
 				err := procs[i].start()
 				if err != nil {
 					errCh <- err
 					return false
 				}
+				cmdStr := procs[i].service.Command
 				p.logger.Info("service have started", zap.String("name", key.(string)), zap.String("command", cmdStr))
 			}
 

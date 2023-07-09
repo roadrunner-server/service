@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/roadrunner-server/sdk/v4/utils"
 	"os"
 	"os/exec"
 	"strings"
@@ -68,13 +69,20 @@ func (p *Process) start() error {
 		p.createProcess(cmdArgs)
 	}
 
+	utils.IsolateProcess(p.command)
+
+	err := p.configureUser()
+	if err != nil {
+		return err
+	}
+
 	p.command.Env = p.setEnv(p.service.Env)
 	// redirect stderr and stdout into the Write function of the process.go
 	p.command.Stderr = p
 	p.command.Stdout = p
 
 	// non-blocking process start
-	err := p.command.Start()
+	err = p.command.Start()
 	if err != nil {
 		return err
 	}
@@ -108,6 +116,17 @@ func (p *Process) createProcess(cmdArgs []string) {
 	} else {
 		p.command = exec.Command(cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
 	}
+}
+
+func (p *Process) configureUser() error {
+	if p.service.User != "" {
+		err := utils.ExecuteFromUser(p.command, p.service.User)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // wait process for exit
