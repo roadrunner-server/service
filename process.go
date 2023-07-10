@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/roadrunner-server/sdk/v4/utils"
 	"os"
 	"os/exec"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/roadrunner-server/sdk/v4/utils"
 	"go.uber.org/zap"
 )
 
