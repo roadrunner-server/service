@@ -7,7 +7,7 @@ require (
 	github.com/roadrunner-server/sdk/v4 v4.3.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	go.buf.build/protocolbuffers/go/roadrunner-server/api v1.3.40
-	go.uber.org/zap v1.24.0
+	go.uber.org/zap v1.25.0
 )
 
 require (
@@ -21,6 +21,6 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 )
