@@ -17,6 +17,7 @@ type Service struct {
 	RestartSec      uint64        `mapstructure:"restart_sec"`
 	TimeoutStopSec  uint64        `mapstructure:"timeout_stop_sec"`
 	Env             Env           `mapstructure:"env"`
+	User            string        `mapstructure:"user"`
 }
 
 // Config for the services
