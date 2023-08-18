@@ -13,7 +13,7 @@ require (
 )
 
 require (
-	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/roadrunner-server/goridge/v3 v3.7.0 // indirect
 	github.com/roadrunner-server/tcplisten v1.4.0 // indirect
