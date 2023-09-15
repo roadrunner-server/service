@@ -9,7 +9,7 @@ require (
 	github.com/roadrunner-server/errors v1.3.0
 	github.com/roadrunner-server/sdk/v4 v4.4.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	go.uber.org/zap v1.25.0
+	go.uber.org/zap v1.26.0
 )
 
 require (
