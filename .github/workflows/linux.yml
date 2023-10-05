@@ -36,22 +36,27 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
 
+      - name: Increase FD limit
+        run: |
+          echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+          ulimit -n 5000
+
       - name: Install Go dependencies
         run: go mod download
+
+      - name: Run service unit tests with coverage
+        run: |
+          go test -timeout 20m -v -race -cover -tags=debug -failfast -coverpkg=$(cat ./tests/pkgs.txt) -coverprofile=./tests/coverage-ci/service_u.out -covermode=atomic ./...
 
       - name: Run service e2e tests with coverage
         run: |
           cd tests
           mkdir ./coverage-ci
           
-          chmod 777 php_test_files/test_service_binary
-          chmod +x php_test_files/test_service_binary
+          chmod 777 php_test_files/test_binary
+          chmod +x php_test_files/test_binary
           
           go test -timeout 20m -v -race -cover -tags=debug -failfast -coverpkg=$(cat pkgs.txt) -coverprofile=./coverage-ci/service.out -covermode=atomic ./...
-
-      - name: Run service unit tests with coverage
-        run: |
-          go test -timeout 20m -v -race -cover -tags=debug -failfast -coverpkg=$(cat ./tests/pkgs.txt) -coverprofile=./tests/coverage-ci/service_u.out -covermode=atomic ./...
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3

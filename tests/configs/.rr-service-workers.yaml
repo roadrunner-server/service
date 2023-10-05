@@ -11,7 +11,7 @@ service:
     remain_after_exit: false
     restart_sec: 1
   some_service_2:
-    command: "php_test_files/test_service_binary"
+    command: "php_test_files/test_binary"
     process_num: 10
     remain_after_exit: false
     restart_delay: 1s

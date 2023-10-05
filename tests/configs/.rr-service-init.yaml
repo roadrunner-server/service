@@ -7,7 +7,7 @@ service:
     exec_timeout: 5s # s,m,h (seconds, minutes, hours)
     restart_sec: 1
   some_service_2:
-    command: "./php_test_files/test_service_binary"
+    command: "./php_test_files/test_binary"
     process_num: 1
     restart_delay: 1s
     exec_timeout: 5s
