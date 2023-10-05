@@ -2,7 +2,7 @@ version: '3'
 
 service:
   some_service_2:
-    command: "php_test_files/test_binary"
+    command: "php_test_files/test_service_binary"
     process_num: 1
     remain_after_exit: false
     restart_delay: 1s

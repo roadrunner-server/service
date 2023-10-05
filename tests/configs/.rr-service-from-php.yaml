@@ -5,7 +5,7 @@ rpc:
 
 service:
   some_service_1:
-    command: "php php_test_files/services/create_3_services.php"
+    command: "php php_test_files/create_3_services.php"
     process_num: 1
     exec_timeout: 20s # s,m,h (seconds, minutes, hours)
     remain_after_exit: false
