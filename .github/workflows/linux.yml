@@ -46,12 +46,12 @@ jobs:
 
       - name: Run service unit tests with coverage
         run: |
+          mkdir ./tests/coverage-ci
           go test -timeout 20m -v -race -cover -tags=debug -failfast -coverpkg=$(cat ./tests/pkgs.txt) -coverprofile=./tests/coverage-ci/service_u.out -covermode=atomic ./...
 
       - name: Run service e2e tests with coverage
         run: |
           cd tests
-          mkdir ./coverage-ci
           
           chmod 777 php_test_files/test_binary
           chmod +x php_test_files/test_binary
