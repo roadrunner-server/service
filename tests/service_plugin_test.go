@@ -103,8 +103,10 @@ func TestServicePHPCreate(t *testing.T) {
 	}
 
 	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
+	_ = l
 	err := cont.RegisterAll(
-		l,
+		//l,
+		&logger.Plugin{},
 		cfg,
 		&rpcPlugin.Plugin{},
 		&service.Plugin{},
