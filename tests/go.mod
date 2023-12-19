@@ -14,7 +14,7 @@ require (
 	github.com/roadrunner-server/resetter/v4 v4.0.18
 	github.com/roadrunner-server/rpc/v4 v4.2.12
 	github.com/roadrunner-server/sdk/v4 v4.5.4
-	github.com/roadrunner-server/service/v4 v4.4.11
+	github.com/roadrunner-server/service/v4 v4.5.0
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.26.0
 )
