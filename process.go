@@ -175,22 +175,24 @@ func (p *Process) stop() {
 	p.Lock()
 	defer p.Unlock()
 
-	if p.cancel != nil {
-		p.cancel()
-	}
-
 	if p.command == nil || p.command.Process == nil {
 		return
 	}
 
+	// send SIGINT and wait
 	_ = p.command.Process.Signal(syscall.SIGINT)
 
 	ta := time.NewTimer(time.Second * time.Duration(p.service.TimeoutStopSec))
 	select {
 	case <-ta.C:
-		_ = p.command.Process.Signal(syscall.SIGKILL)
-		ta.Stop()
+		// canceling context will raise SIGKILL
+		if p.cancel != nil {
+			p.cancel()
+		} else {
+			_ = p.command.Process.Signal(syscall.SIGKILL)
+		}
 
+		ta.Stop()
 		select {
 		case <-p.sigintCh:
 		default:
