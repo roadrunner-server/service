@@ -6,15 +6,15 @@ toolchain go1.22rc1
 
 require (
 	github.com/roadrunner-server/api/v4 v4.10.0
-	github.com/roadrunner-server/config/v4 v4.6.4
+	github.com/roadrunner-server/config/v4 v4.6.5
 	github.com/roadrunner-server/endure/v2 v2.4.3
 	github.com/roadrunner-server/goridge/v3 v3.8.1
-	github.com/roadrunner-server/informer/v4 v4.3.11
-	github.com/roadrunner-server/logger/v4 v4.2.11
-	github.com/roadrunner-server/resetter/v4 v4.0.18
-	github.com/roadrunner-server/rpc/v4 v4.2.12
-	github.com/roadrunner-server/sdk/v4 v4.5.4
-	github.com/roadrunner-server/service/v4 v4.5.0
+	github.com/roadrunner-server/informer/v4 v4.3.12
+	github.com/roadrunner-server/logger/v4 v4.2.12
+	github.com/roadrunner-server/resetter/v4 v4.0.19
+	github.com/roadrunner-server/rpc/v4 v4.2.13
+	github.com/roadrunner-server/sdk/v4 v4.5.5
+	github.com/roadrunner-server/service/v4 v4.5.1
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.26.0
 )
@@ -52,9 +52,9 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20231226003508-02704c960a9b // indirect
-	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc // indirect
+	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
