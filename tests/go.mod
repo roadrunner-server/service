@@ -13,7 +13,7 @@ require (
 	github.com/roadrunner-server/logger/v4 v4.2.13
 	github.com/roadrunner-server/resetter/v4 v4.0.20
 	github.com/roadrunner-server/rpc/v4 v4.2.14
-	github.com/roadrunner-server/sdk/v4 v4.5.6
+	github.com/roadrunner-server/sdk/v4 v4.6.0
 	github.com/roadrunner-server/service/v4 v4.5.2
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.26.0
