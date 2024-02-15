@@ -51,8 +51,8 @@ github.com/roadrunner-server/informer/v4 v4.3.14 h1:eJWI079rMBJBkYVWwtFdkozGw9hw
 github.com/roadrunner-server/informer/v4 v4.3.14/go.mod h1:Ir5FsF7/BndYNtzLJvRz/4sJaMGe3jojDDG6FAWeeXk=
 github.com/roadrunner-server/logger/v4 v4.2.14 h1:BVJqmdsI+tIkspSyTd5MsqvHX2w2oxGYjRTSh5kDL1w=
 github.com/roadrunner-server/logger/v4 v4.2.14/go.mod h1:z8ainOGoCNey7vEAEfiVAMYmOmfAUoN3z13Hc0co1Ho=
-github.com/roadrunner-server/resetter/v4 v4.0.21 h1:C3BF7YLTcZfqTKUZUudaTQ/IUfinz4VmshTEhywipx0=
-github.com/roadrunner-server/resetter/v4 v4.0.21/go.mod h1:yn/1UXSceuBQ+R+loXSKqmKtx6htcVRza2Ifni0i3FA=
+github.com/roadrunner-server/resetter/v4 v4.1.0 h1:xQ1zOpkwqTgzzp6FtS8x3HhNcceOpSmhtqTk2i/GWQw=
+github.com/roadrunner-server/resetter/v4 v4.1.0/go.mod h1:uJwGNu+Ktodo3JGAOEiz+EmvgB+vorTbR2HDL7bWR3M=
 github.com/roadrunner-server/rpc/v4 v4.2.15 h1:cGKsF2tYqe8k+oRM3aWsbddpihY1vhjd9n6/w6AqEqA=
 github.com/roadrunner-server/rpc/v4 v4.2.15/go.mod h1:Hxduua91f9pAkMzoJzG+a5Ep3azHeBsp2I842A6X+mQ=
 github.com/roadrunner-server/sdk/v4 v4.6.0 h1:dXMN7V8+VKjQAZamhKBizPGSqrpfAfVG6r4OCF66hNY=
