@@ -223,7 +223,7 @@ func (r *rpc) List(_ *serviceV1.Service, out *serviceV1.List) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	r.p.processes.Range(func(key, value interface{}) bool {
+	r.p.processes.Range(func(key, _ any) bool {
 		r.p.logger.Debug("services list", zap.String("service", key.(string)))
 		out.Services = append(out.Services, key.(string))
 		return true
