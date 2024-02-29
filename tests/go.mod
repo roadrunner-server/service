@@ -3,7 +3,7 @@ module tests
 go 1.22.0
 
 require (
-	github.com/roadrunner-server/api/v4 v4.11.0
+	github.com/roadrunner-server/api/v4 v4.11.1
 	github.com/roadrunner-server/config/v4 v4.6.8
 	github.com/roadrunner-server/endure/v2 v2.4.3
 	github.com/roadrunner-server/goridge/v3 v3.8.1
