@@ -1,9 +1,8 @@
 module github.com/roadrunner-server/service/v4
 
 go 1.22.0
-
 require (
-	github.com/roadrunner-server/api/v4 v4.11.1
+	github.com/roadrunner-server/api/v4 v4.12.0
 	github.com/roadrunner-server/errors v1.4.0
 	github.com/roadrunner-server/sdk/v4 v4.6.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
