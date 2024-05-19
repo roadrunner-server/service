@@ -4,13 +4,13 @@ go 1.22.3
 
 require (
 	github.com/roadrunner-server/api/v4 v4.12.0
-	github.com/roadrunner-server/config/v4 v4.8.1
+	github.com/roadrunner-server/config/v4 v4.8.2
 	github.com/roadrunner-server/endure/v2 v2.4.4
 	github.com/roadrunner-server/goridge/v3 v3.8.2
-	github.com/roadrunner-server/informer/v4 v4.5.1
-	github.com/roadrunner-server/logger/v4 v4.4.1
-	github.com/roadrunner-server/resetter/v4 v4.3.1
-	github.com/roadrunner-server/rpc/v4 v4.4.1
+	github.com/roadrunner-server/informer/v4 v4.5.2
+	github.com/roadrunner-server/logger/v4 v4.4.2
+	github.com/roadrunner-server/resetter/v4 v4.3.2
+	github.com/roadrunner-server/rpc/v4 v4.4.2
 	github.com/roadrunner-server/sdk/v4 v4.7.2
 	github.com/roadrunner-server/service/v4 v4.5.5
 	github.com/stretchr/testify v1.9.0
