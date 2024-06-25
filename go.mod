@@ -3,7 +3,7 @@ module github.com/roadrunner-server/service/v4
 go 1.22.4
 
 require (
-	github.com/roadrunner-server/api/v4 v4.12.0
+	github.com/roadrunner-server/api/v4 v4.13.0
 	github.com/roadrunner-server/errors v1.4.0
 	github.com/roadrunner-server/sdk/v4 v4.7.3
 	github.com/shirou/gopsutil v3.21.11+incompatible
