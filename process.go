@@ -12,11 +12,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/roadrunner-server/sdk/v4/utils"
+	"github.com/roadrunner-server/pool/process"
 	"go.uber.org/zap"
 )
 
-// Process structure contains an information about process, restart information, log, errors, etc
+// Process structure contains information about process, restart information, log, errors, etc
 type Process struct {
 	sync.Mutex
 	// command to execute
@@ -57,7 +57,7 @@ func NewServiceProcess(service *Service, name string, l *zap.Logger) *Process {
 	}
 }
 
-// write message to the log (stderr)
+// write a message to the log (stderr)
 func (p *Process) Write(b []byte) (int, error) {
 	p.log.Info(string(bytes.TrimRight(bytes.TrimRight(bytes.TrimSpace(b), "\n"), "\t")))
 	return len(b), nil
@@ -78,7 +78,7 @@ func (p *Process) start() error {
 		p.createProcess(cmdArgs)
 	}
 
-	utils.IsolateProcess(p.command)
+	process.IsolateProcess(p.command)
 
 	err := p.configureUser()
 	if err != nil {
@@ -129,7 +129,7 @@ func (p *Process) createProcess(cmdArgs []string) {
 
 func (p *Process) configureUser() error {
 	if p.service.User != "" {
-		err := utils.ExecuteFromUser(p.command, p.service.User)
+		err := process.ExecuteFromUser(p.command, p.service.User)
 		if err != nil {
 			return err
 		}

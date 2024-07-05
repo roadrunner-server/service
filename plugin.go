@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/roadrunner-server/errors"
-	"github.com/roadrunner-server/sdk/v4/state/process"
+	"github.com/roadrunner-server/pool/state/process"
 	"go.uber.org/zap"
 )
 
@@ -24,7 +24,7 @@ type Plugin struct {
 type Configurer interface {
 	// UnmarshalKey takes a single key and unmarshal it into a Struct.
 	UnmarshalKey(name string, out any) error
-	// Has checks if config section exists.
+	// Has checks if a config section exists.
 	Has(name string) bool
 }
 

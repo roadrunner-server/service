@@ -14,15 +14,15 @@ import (
 	mocklogger "tests/mock"
 
 	serviceProto "github.com/roadrunner-server/api/v4/build/service/v1"
-	"github.com/roadrunner-server/config/v4"
+	"github.com/roadrunner-server/config/v5"
 	"github.com/roadrunner-server/endure/v2"
 	goridgeRpc "github.com/roadrunner-server/goridge/v3/pkg/rpc"
-	"github.com/roadrunner-server/informer/v4"
-	"github.com/roadrunner-server/logger/v4"
-	"github.com/roadrunner-server/resetter/v4"
-	rpcPlugin "github.com/roadrunner-server/rpc/v4"
-	"github.com/roadrunner-server/sdk/v4/state/process"
-	"github.com/roadrunner-server/service/v4"
+	"github.com/roadrunner-server/informer/v5"
+	"github.com/roadrunner-server/logger/v5"
+	"github.com/roadrunner-server/pool/state/process"
+	"github.com/roadrunner-server/resetter/v5"
+	rpcPlugin "github.com/roadrunner-server/rpc/v5"
+	"github.com/roadrunner-server/service/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -32,9 +32,8 @@ func TestServiceInit(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-init.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -99,7 +98,6 @@ func TestServicePHPCreate(t *testing.T) {
 	cfg := &config.Plugin{
 		Version: "2023.2.0",
 		Path:    "configs/.rr-service-from-php.yaml",
-		Prefix:  "rr",
 	}
 
 	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
@@ -167,9 +165,8 @@ func TestServiceTrimOutput(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-newlines.yaml",
-		Prefix:  "rr",
 	}
 
 	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
@@ -235,9 +232,8 @@ func TestServiceWorkers(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-workers.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -304,9 +300,8 @@ func TestServiceInitStdout(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-init-stdout.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -369,9 +364,8 @@ func TestServiceEnv(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-env.yaml",
-		Prefix:  "rr",
 	}
 
 	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
@@ -436,9 +430,8 @@ func TestServiceError(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-error.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -498,9 +491,8 @@ func TestServiceRestarts(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-restarts.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -563,9 +555,8 @@ func TestServiceCreate(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-create.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -649,9 +640,8 @@ func TestServiceCreateEmptyConfig(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-create-empty.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -745,9 +735,8 @@ func TestServiceRestart(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-create-empty.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -845,9 +834,8 @@ func TestServiceRestartConcurrent(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-create-empty.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -964,9 +952,8 @@ func TestServiceListConcurrent(t *testing.T) {
 	cont := endure.New(slog.LevelDebug, endure.GracefulShutdownTimeout(time.Second*5))
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-create-empty.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -1085,9 +1072,8 @@ func TestServiceStatus(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-create-empty.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -1186,9 +1172,8 @@ func TestServiceInitRemain(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-init-remain.yaml",
-		Prefix:  "rr",
 	}
 
 	err := cont.RegisterAll(
@@ -1251,9 +1236,8 @@ func TestServiceReset(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-reset.yaml",
-		Prefix:  "rr",
 	}
 
 	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
@@ -1333,9 +1317,8 @@ func TestServiceReset2(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-reload-22.yaml",
-		Prefix:  "rr",
 	}
 
 	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
@@ -1425,9 +1408,8 @@ func TestServiceReset3(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-reload-2.yaml",
-		Prefix:  "rr",
 	}
 
 	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
@@ -1506,9 +1488,8 @@ func TestServiceReset4(t *testing.T) {
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
-		Version: "2.9.0",
+		Version: "2024.2.0",
 		Path:    "configs/.rr-service-reload.yaml",
-		Prefix:  "rr",
 	}
 
 	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
@@ -1662,9 +1643,9 @@ func workers(service string) func(t *testing.T) {
 		conn, err := net.Dial("tcp", "127.0.0.1:6001")
 		require.NoError(t, err)
 		client := rpc.NewClientWithCodec(goridgeRpc.NewClientCodec(conn))
-		// WorkerList contains list of workers.
+		// WorkerList contains a list of workers.
 		lst := struct {
-			// Workers is list of workers.
+			// Workers is a list of workers.
 			Workers []process.State `json:"workers"`
 		}{}
 
