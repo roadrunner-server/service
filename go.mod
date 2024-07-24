@@ -1,11 +1,13 @@
 module github.com/roadrunner-server/service/v5
 
-go 1.22.5
+go 1.22
+
+toolchain go1.22.5
 
 require (
-	github.com/roadrunner-server/api/v4 v4.15.0
+	github.com/roadrunner-server/api/v4 v4.16.0
 	github.com/roadrunner-server/errors v1.4.0
-	github.com/roadrunner-server/pool v1.0.0
+	github.com/roadrunner-server/pool v1.0.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	go.uber.org/zap v1.27.0
 )
@@ -16,7 +18,7 @@ require (
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/roadrunner-server/goridge/v3 v3.8.2 // indirect
+	github.com/roadrunner-server/goridge/v3 v3.8.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
