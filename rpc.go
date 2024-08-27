@@ -159,7 +159,7 @@ func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 			return err
 		}
 
-		out.Pid = int32(state.Pid)
+		out.Pid = int32(state.Pid) //nolint:gosec
 		out.Command = state.Command
 		out.CpuPercent = float32(state.CPUPercent)
 		out.MemoryUsage = state.MemoryUsage
@@ -195,7 +195,7 @@ func (r *rpc) Statuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
 			*/
 			out.Status = append(out.Status, &serviceV1.Status{
 				CpuPercent:  0,
-				Pid:         int32(procs[i].pid),
+				Pid:         int32(procs[i].pid), //nolint:gosec
 				MemoryUsage: 0,
 				Command:     procs[i].command.String(),
 				Status: &shared.Status{
@@ -209,7 +209,7 @@ func (r *rpc) Statuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
 
 		out.Status = append(out.Status, &serviceV1.Status{
 			CpuPercent:  float32(state.CPUPercent),
-			Pid:         int32(state.Pid),
+			Pid:         int32(state.Pid), //nolint:gosec
 			MemoryUsage: state.MemoryUsage,
 			Command:     state.Command,
 			Status:      nil,

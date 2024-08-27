@@ -8,7 +8,7 @@ import (
 
 func generalProcessState(pid int64, command string) (*rrProcess.State, error) {
 	const op = errors.Op("process_state")
-	p, _ := process.NewProcess(int32(pid))
+	p, _ := process.NewProcess(int32(pid)) //nolint:gosec
 	i, err := p.MemoryInfo()
 	if err != nil {
 		return nil, errors.E(op, err)

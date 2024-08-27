@@ -159,7 +159,7 @@ func (p *Process) wait() {
 			return
 		}
 		// wait for the delay
-		time.Sleep(time.Second * time.Duration(p.service.RestartSec))
+		time.Sleep(time.Second * time.Duration(p.service.RestartSec)) //nolint:gosec
 		// and start command again
 		err = p.start()
 		if err != nil {
@@ -182,7 +182,7 @@ func (p *Process) stop() {
 	// send SIGINT and wait
 	_ = p.command.Process.Signal(syscall.SIGINT)
 
-	ta := time.NewTimer(time.Second * time.Duration(p.service.TimeoutStopSec))
+	ta := time.NewTimer(time.Second * time.Duration(p.service.TimeoutStopSec)) //nolint:gosec
 	select {
 	case <-ta.C:
 		// canceling context will raise SIGKILL
