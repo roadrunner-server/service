@@ -6,14 +6,14 @@ toolchain go1.23.1
 
 require (
 	github.com/roadrunner-server/api/v4 v4.16.0
-	github.com/roadrunner-server/config/v5 v5.0.3
+	github.com/roadrunner-server/config/v5 v5.0.4
 	github.com/roadrunner-server/endure/v2 v2.6.1
 	github.com/roadrunner-server/goridge/v3 v3.8.3
-	github.com/roadrunner-server/informer/v5 v5.0.3
-	github.com/roadrunner-server/logger/v5 v5.0.3
+	github.com/roadrunner-server/informer/v5 v5.0.4
+	github.com/roadrunner-server/logger/v5 v5.0.4
 	github.com/roadrunner-server/pool v1.0.2
-	github.com/roadrunner-server/resetter/v5 v5.0.4
-	github.com/roadrunner-server/rpc/v5 v5.0.3
+	github.com/roadrunner-server/resetter/v5 v5.0.5
+	github.com/roadrunner-server/rpc/v5 v5.0.4
 	github.com/roadrunner-server/service/v5 v5.0.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
