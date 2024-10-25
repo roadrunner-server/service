@@ -1,0 +1,70 @@
+{
+  "$id": "https://raw.githubusercontent.com/roadrunner-server/service/refs/heads/master/schema.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "description": "All the valid configuration parameters for the Service plugin for RoadRunner.",
+  "type": "object",
+  "title": "roadrunner-service",
+  "minProperties": 1,
+  "additionalProperties": false,
+  "patternProperties": {
+    "^[a-zA-Z0-9._-]+$": {
+      "type": "object",
+      "description": "The user-defined service.",
+      "additionalProperties": false,
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "command": {
+          "description": "The command the service should execute. This can be any executable instruction that RoadRunner has access to on the server.",
+          "type": "string",
+          "minLength": 1
+        },
+        "env": {
+          "type": "object",
+          "description": "Environment variables to pass to the service.",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "patternProperties": {
+            "^[a-zA-Z0-9._-]+$": {
+              "type": "string"
+            }
+          }
+        },
+        "timeout_stop_sec": {
+          "description": "Timeout for the service stop operation. If it takes longer for this duration for the service to stop, it will be killed. Zero or empty defaults to 5.",
+          "type": "integer",
+          "minimum": 0,
+          "default": 5
+        },
+        "process_num": {
+          "description": "Number of copies (processes) to start per command execution.",
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "exec_timeout": {
+          "description": "The maximum duration the service is allowed to run before RR will kill it. Default/zero means unlimited.",
+          "type": "string",
+          "$ref": "https://raw.githubusercontent.com/roadrunner-server/roadrunner/refs/heads/master/schemas/config/3.0.schema.json#/definitions/Duration",
+          "default": "0s"
+        },
+        "remain_after_exit": {
+          "description": "Whether to restart the process if it exits, regardless of the exit code.",
+          "type": "boolean",
+          "default": false
+        },
+        "restart_sec": {
+          "description": "Number of seconds to wait before process restart. Default/zero means 30 seconds.",
+          "type": "integer",
+          "default": 30
+        },
+        "service_name_in_log": {
+          "description": "Whether to include the name of the service in logs (e.g. `service.some_service_1`).",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  }
+}
