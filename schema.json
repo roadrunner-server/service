@@ -11,6 +11,9 @@
       "type": "object",
       "description": "The user-defined service.",
       "additionalProperties": false,
+      "required": [
+        "command"
+      ],
       "properties": {
         "command": {
           "description": "The command the service should execute. This can be any executable instruction that RoadRunner has access to on the server.",
@@ -31,7 +34,7 @@
         "timeout_stop_sec": {
           "description": "Timeout for the service stop operation. If it takes longer for this duration for the service to stop, it will be killed. Zero or empty defaults to 5.",
           "type": "integer",
-          "minItems": 0,
+          "minimum": 0,
           "default": 5
         },
         "process_num": {
@@ -61,10 +64,7 @@
           "type": "boolean",
           "default": false
         }
-      },
-      "required": [
-        "command"
-      ]
+      }
     }
   }
 }
