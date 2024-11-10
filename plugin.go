@@ -85,7 +85,7 @@ func (p *Plugin) Serve() chan error {
 					p.logger.Info("service will start with delay",
 						zap.String("name", key.(string)),
 						zap.String("command", cmdStr),
-						zap.Duration("delay", delayDuration))
+						zap.Uint64("delay", procs[i].service.StartDelaySec))
 
 					go func(proc *Process, name string, cmd string) {
 						time.Sleep(delayDuration)
@@ -96,7 +96,8 @@ func (p *Plugin) Serve() chan error {
 						}
 						p.logger.Info("service was started after delay",
 							zap.String("name", name),
-							zap.String("command", cmd))
+							zap.String("command", cmd),
+							zap.Uint64("delayed_seconds", proc.service.StartDelaySec))
 					}(procs[i], key.(string), cmdStr)
 				} else {
 					err := procs[i].start()
