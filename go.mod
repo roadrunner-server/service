@@ -1,4 +1,4 @@
-module github.com/shellphy/service/v5
+module github.com/roadrunner-server/service/v5
 
 go 1.23
 
