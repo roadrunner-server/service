@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/roadrunner-server/errors"
 	"github.com/roadrunner-server/pool/state/process"
@@ -78,12 +79,35 @@ func (p *Plugin) Serve() chan error {
 
 			for i := 0; i < len(procs); i++ {
 				cmdStr := procs[i].service.Command
-				err := procs[i].start()
-				if err != nil {
-					errCh <- err
-					return false
+
+				if procs[i].service.StartDelaySec > 0 {
+					delayDuration := time.Duration(procs[i].service.StartDelaySec) * time.Second
+					p.logger.Info("service will start with delay",
+						zap.String("name", key.(string)),
+						zap.String("command", cmdStr),
+						zap.Duration("delay", delayDuration))
+
+					go func(proc *Process, name string, cmd string) {
+						time.Sleep(delayDuration)
+						err := proc.start()
+						if err != nil {
+							errCh <- err
+							return
+						}
+						p.logger.Info("service was started after delay",
+							zap.String("name", name),
+							zap.String("command", cmd))
+					}(procs[i], key.(string), cmdStr)
+				} else {
+					err := procs[i].start()
+					if err != nil {
+						errCh <- err
+						return false
+					}
+					p.logger.Info("service was started",
+						zap.String("name", key.(string)),
+						zap.String("command", cmdStr))
 				}
-				p.logger.Info("service was started", zap.String("name", key.(string)), zap.String("command", cmdStr))
 			}
 
 			return true

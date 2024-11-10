@@ -16,6 +16,7 @@ type Service struct {
 	RemainAfterExit bool          `mapstructure:"remain_after_exit"`
 	RestartSec      uint64        `mapstructure:"restart_sec"`
 	TimeoutStopSec  uint64        `mapstructure:"timeout_stop_sec"`
+	StartDelaySec   uint64        `mapstructure:"start_delay_sec"`
 	Env             Env           `mapstructure:"env"`
 	User            string        `mapstructure:"user"`
 }
@@ -45,6 +46,10 @@ func (c *Config) InitDefault() {
 			// default 5 seconds
 			if v.TimeoutStopSec == 0 {
 				v.TimeoutStopSec = 5
+			}
+
+			if v.StartDelaySec <= 0 {
+				v.StartDelaySec = 0
 			}
 		}
 	}
