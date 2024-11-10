@@ -85,7 +85,7 @@ func (p *Plugin) Serve() chan error {
 					p.logger.Info("service will start with delay",
 						zap.String("name", key.(string)),
 						zap.String("command", cmdStr),
-						zap.Uint64("delay", procs[i].service.StartDelaySec))
+						zap.Uint64("delay_seconds", procs[i].service.StartDelaySec))
 
 					go func(proc *Process, name string, cmd string) {
 						time.Sleep(delayDuration)
