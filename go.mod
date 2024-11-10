@@ -2,7 +2,7 @@ module github.com/roadrunner-server/service/v5
 
 go 1.23
 
-toolchain go1.23.2
+toolchain go1.23.3
 
 require (
 	github.com/roadrunner-server/api/v4 v4.16.0
@@ -23,6 +23,6 @@ require (
 	github.com/tklauser/numcpus v0.9.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 )
