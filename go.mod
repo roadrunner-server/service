@@ -7,7 +7,7 @@ toolchain go1.23.4
 require (
 	github.com/roadrunner-server/api/v4 v4.16.0
 	github.com/roadrunner-server/errors v1.4.1
-	github.com/roadrunner-server/pool v1.1.0
+	github.com/roadrunner-server/pool v1.1.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	go.uber.org/zap v1.27.0
 )

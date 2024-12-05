@@ -11,7 +11,7 @@ require (
 	github.com/roadrunner-server/goridge/v3 v3.8.3
 	github.com/roadrunner-server/informer/v5 v5.0.4
 	github.com/roadrunner-server/logger/v5 v5.0.4
-	github.com/roadrunner-server/pool v1.1.0
+	github.com/roadrunner-server/pool v1.1.1
 	github.com/roadrunner-server/resetter/v5 v5.0.5
 	github.com/roadrunner-server/rpc/v5 v5.0.4
 	github.com/roadrunner-server/service/v5 v5.0.0
@@ -53,9 +53,9 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f // indirect
+	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d // indirect
 	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
