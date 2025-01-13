@@ -5,7 +5,7 @@ go 1.23
 toolchain go1.23.4
 
 require (
-	github.com/roadrunner-server/api/v4 v4.17.0
+	github.com/roadrunner-server/api/v4 v4.18.1
 	github.com/roadrunner-server/errors v1.4.1
 	github.com/roadrunner-server/pool v1.1.2
 	github.com/shirou/gopsutil v3.21.11+incompatible
