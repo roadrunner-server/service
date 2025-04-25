@@ -64,7 +64,7 @@ func (p *Plugin) Serve() chan error {
 			// create needed number of the processes
 			procs := make([]*Process, p.cfg.Services[k].ProcessNum)
 
-			for i := 0; i < p.cfg.Services[k].ProcessNum; i++ {
+			for i := range p.cfg.Services[k].ProcessNum {
 				// create processor structure, which will process all the services
 				procs[i] = NewServiceProcess(p.cfg.Services[k], k, p.logger)
 			}
@@ -76,7 +76,7 @@ func (p *Plugin) Serve() chan error {
 		p.processes.Range(func(key, value any) bool {
 			procs := value.([]*Process)
 
-			for i := 0; i < len(procs); i++ {
+			for i := range procs {
 				cmdStr := procs[i].service.Command
 				err := procs[i].start()
 				if err != nil {
@@ -103,7 +103,7 @@ func (p *Plugin) Reset() error {
 
 		newProcs := make([]*Process, len(procs))
 
-		for i := 0; i < len(procs); i++ {
+		for i := range procs {
 			procs[i].stop()
 			p.processes.Delete(key)
 
@@ -132,11 +132,11 @@ func (p *Plugin) Workers() []*process.State {
 	defer p.mu.Unlock()
 	states := make([]*process.State, 0, 5)
 
-	p.processes.Range(func(key, value interface{}) bool {
+	p.processes.Range(func(key, value any) bool {
 		k := key.(string)
 		procs := value.([]*Process)
 
-		for i := 0; i < len(procs); i++ {
+		for i := range procs {
 			st, err := generalProcessState(procs[i].pid, procs[i].command.String())
 			if err != nil {
 				p.logger.Error("get process state", zap.String("name", k), zap.String("command", procs[i].command.String()))
@@ -152,11 +152,11 @@ func (p *Plugin) Workers() []*process.State {
 }
 
 func (p *Plugin) Stop(context.Context) error {
-	p.processes.Range(func(key, value interface{}) bool {
+	p.processes.Range(func(key, value any) bool {
 		k := key.(string)
 		procs := value.([]*Process)
 
-		for i := 0; i < len(procs); i++ {
+		for i := range procs {
 			procs[i].stop()
 
 			p.logger.Info("service was stopped", zap.String("name", k), zap.String("command", procs[i].service.Command))

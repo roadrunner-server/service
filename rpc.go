@@ -32,7 +32,7 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 
 	procs := make([]*Process, 0, in.GetProcessNum())
 
-	for i := 0; i < int(in.GetProcessNum()); i++ {
+	for range int(in.GetProcessNum()) {
 		// create processor structure, which will process all the services
 		proc := NewServiceProcess(&Service{
 			Command:         in.GetCommand(),
@@ -50,7 +50,7 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 			// if some process from the group failed -> deallocate the whole group
 			if len(procs) > 0 {
 				r.p.logger.Warn("stopping already allocated processes")
-				for i := 0; i < len(procs); i++ {
+				for i := range procs {
 					procs[i].stop()
 				}
 			}
@@ -84,7 +84,7 @@ func (r *rpc) Terminate(in *serviceV1.Service, out *serviceV1.Response) error {
 	}
 
 	procs := procInterface.([]*Process)
-	for i := 0; i < len(procs); i++ {
+	for i := range procs {
 		procs[i].stop()
 	}
 
@@ -111,7 +111,7 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 	procs := procInterface.([]*Process)
 
 	newProcs := make([]*Process, len(procs))
-	for i := 0; i < len(procs); i++ {
+	for i := range procs {
 		procs[i].stop()
 
 		service := &Service{}
@@ -153,7 +153,7 @@ func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 
 	procs := procInterface.([]*Process)
 
-	for i := 0; i < len(procs); i++ {
+	for i := range procs {
 		state, err := generalProcessState(procs[i].pid, procs[i].command.String())
 		if err != nil {
 			return err
@@ -187,7 +187,7 @@ func (r *rpc) Statuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
 
 	procs := procInterface.([]*Process)
 
-	for i := 0; i < len(procs); i++ {
+	for i := range procs {
 		state, err := generalProcessState(procs[i].pid, procs[i].command.String())
 		if err != nil {
 			/*
