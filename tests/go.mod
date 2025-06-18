@@ -6,14 +6,14 @@ toolchain go1.24.0
 
 require (
 	github.com/roadrunner-server/api/v4 v4.20.0
-	github.com/roadrunner-server/config/v5 v5.1.7
+	github.com/roadrunner-server/config/v5 v5.1.8
 	github.com/roadrunner-server/endure/v2 v2.6.2
 	github.com/roadrunner-server/goridge/v3 v3.8.3
-	github.com/roadrunner-server/informer/v5 v5.1.7
-	github.com/roadrunner-server/logger/v5 v5.1.7
+	github.com/roadrunner-server/informer/v5 v5.1.8
+	github.com/roadrunner-server/logger/v5 v5.1.8
 	github.com/roadrunner-server/pool v1.1.3
-	github.com/roadrunner-server/resetter/v5 v5.1.7
-	github.com/roadrunner-server/rpc/v5 v5.1.7
+	github.com/roadrunner-server/resetter/v5 v5.1.8
+	github.com/roadrunner-server/rpc/v5 v5.1.8
 	github.com/roadrunner-server/service/v5 v5.0.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/zap v1.27.0
@@ -26,7 +26,7 @@ require (
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
