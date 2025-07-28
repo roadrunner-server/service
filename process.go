@@ -121,9 +121,9 @@ func (p *Process) createProcessCtx(cmdArgs []string) {
 // create command for the process
 func (p *Process) createProcess(cmdArgs []string) {
 	if len(cmdArgs) < 2 {
-		p.command = exec.Command(p.service.Command) //nolint:gosec
+		p.command = exec.CommandContext(context.Background(), p.service.Command) //nolint:gosec
 	} else {
-		p.command = exec.Command(cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
+		p.command = exec.CommandContext(context.Background(), cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
 	}
 }
 

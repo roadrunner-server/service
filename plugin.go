@@ -42,7 +42,7 @@ func (p *Plugin) Init(cfg Configurer, log Logger) error {
 		return errors.E(op, err)
 	}
 
-	// init default parameters if not set by user
+	// init default parameters if not set by the user
 	p.cfg.InitDefault()
 
 	// save the logger
@@ -56,16 +56,16 @@ func (p *Plugin) Serve() chan error {
 
 	// start processing
 	go func() {
-		// lock here, because Stop command might be invoked during the Serve
+		// lock here, because the Stop command might be invoked during the Serve
 		p.mu.Lock()
 		defer p.mu.Unlock()
 
 		for k := range p.cfg.Services {
-			// create needed number of the processes
+			// create the necessary number of the processes
 			procs := make([]*Process, p.cfg.Services[k].ProcessNum)
 
 			for i := range p.cfg.Services[k].ProcessNum {
-				// create processor structure, which will process all the services
+				// create a processor structure, which will process all the services
 				procs[i] = NewServiceProcess(p.cfg.Services[k], k, p.logger)
 			}
 
@@ -169,7 +169,7 @@ func (p *Plugin) Stop(context.Context) error {
 	return nil
 }
 
-// Name contains service name.
+// Name contains the service name.
 func (p *Plugin) Name() string {
 	return PluginName
 }
