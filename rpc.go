@@ -133,8 +133,9 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 	return nil
 }
 
-// Status returns status for the service
 // Deprecated: use Statuses to get correct info
+
+// Status returns status for the service
 func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 	r.p.logger.Debug("service status", zap.String("name", in.GetName()))
 
