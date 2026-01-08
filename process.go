@@ -68,7 +68,7 @@ func (p *Process) start() error {
 	defer p.Unlock()
 
 	// cmdArgs contain command arguments if the command in form of: php <command> or ls <command> -i -b
-	var cmdArgs []string
+	cmdArgs := make([]string, 0, 5)
 	cmdArgs = append(cmdArgs, strings.Split(p.service.Command, " ")...)
 
 	// crate fat-process here
