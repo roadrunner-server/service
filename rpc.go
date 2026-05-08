@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	shared "github.com/roadrunner-server/api/v4/build/common/v1"
-	serviceV1 "github.com/roadrunner-server/api/v4/build/service/v1"
+	shared "github.com/roadrunner-server/api-go/v6/common/v1"
+	serviceV1 "github.com/roadrunner-server/api-go/v6/service/v1"
 	"go.uber.org/zap"
 )
 

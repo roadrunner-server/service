@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/roadrunner-server/errors"
-	rrProcess "github.com/roadrunner-server/pool/state/process"
+	rrProcess "github.com/roadrunner-server/pool/v2/state/process"
 	"github.com/shirou/gopsutil/process"
 )
 

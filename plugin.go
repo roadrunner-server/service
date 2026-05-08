@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/roadrunner-server/errors"
-	"github.com/roadrunner-server/pool/state/process"
+	"github.com/roadrunner-server/pool/v2/state/process"
 	"go.uber.org/zap"
 )
 
