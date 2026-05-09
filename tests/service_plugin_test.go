@@ -11,12 +11,10 @@ import (
 	"testing"
 	"time"
 
-	mocklogger "tests/mock"
-
 	serviceProto "github.com/roadrunner-server/api-go/v6/service/v1"
 	"github.com/roadrunner-server/config/v5"
 	"github.com/roadrunner-server/endure/v2"
-	goridgeRpc "github.com/roadrunner-server/goridge/v3/pkg/rpc"
+	goridgeRpc "github.com/roadrunner-server/goridge/v4/pkg/rpc"
 	"github.com/roadrunner-server/informer/v5"
 	"github.com/roadrunner-server/logger/v5"
 	"github.com/roadrunner-server/pool/v2/state/process"
@@ -25,7 +23,7 @@ import (
 	"github.com/roadrunner-server/service/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
+	mocklogger "tests/mock"
 )
 
 func TestServiceInit(t *testing.T) {
@@ -100,7 +98,7 @@ func TestServicePHPCreate(t *testing.T) {
 		Path:    "configs/.rr-service-from-php.yaml",
 	}
 
-	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
+	l, oLogger := mocklogger.SlogTestLogger(slog.LevelDebug)
 	err := cont.RegisterAll(
 		l,
 		cfg,
@@ -169,7 +167,7 @@ func TestServiceTrimOutput(t *testing.T) {
 		Path:    "configs/.rr-service-newlines.yaml",
 	}
 
-	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
+	l, oLogger := mocklogger.SlogTestLogger(slog.LevelDebug)
 	err := cont.RegisterAll(
 		cfg,
 		l,
@@ -368,7 +366,7 @@ func TestServiceEnv(t *testing.T) {
 		Path:    "configs/.rr-service-env.yaml",
 	}
 
-	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
+	l, oLogger := mocklogger.SlogTestLogger(slog.LevelDebug)
 	err := cont.RegisterAll(
 		cfg,
 		l,
@@ -1240,7 +1238,7 @@ func TestServiceReset(t *testing.T) {
 		Path:    "configs/.rr-service-reset.yaml",
 	}
 
-	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
+	l, oLogger := mocklogger.SlogTestLogger(slog.LevelDebug)
 	err := cont.RegisterAll(
 		cfg,
 		&rpcPlugin.Plugin{},
@@ -1321,7 +1319,7 @@ func TestServiceReset2(t *testing.T) {
 		Path:    "configs/.rr-service-reload-22.yaml",
 	}
 
-	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
+	l, oLogger := mocklogger.SlogTestLogger(slog.LevelDebug)
 	err := cont.RegisterAll(
 		cfg,
 		l,
@@ -1412,7 +1410,7 @@ func TestServiceReset3(t *testing.T) {
 		Path:    "configs/.rr-service-reload-2.yaml",
 	}
 
-	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
+	l, oLogger := mocklogger.SlogTestLogger(slog.LevelDebug)
 	err := cont.RegisterAll(
 		cfg,
 		l,
@@ -1492,7 +1490,7 @@ func TestServiceReset4(t *testing.T) {
 		Path:    "configs/.rr-service-reload.yaml",
 	}
 
-	l, oLogger := mocklogger.ZapTestLogger(zap.DebugLevel)
+	l, oLogger := mocklogger.SlogTestLogger(slog.LevelDebug)
 	err := cont.RegisterAll(
 		cfg,
 		l,
