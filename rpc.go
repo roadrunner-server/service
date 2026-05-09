@@ -7,7 +7,6 @@ import (
 
 	shared "github.com/roadrunner-server/api-go/v6/common/v1"
 	serviceV1 "github.com/roadrunner-server/api-go/v6/service/v1"
-	"go.uber.org/zap"
 )
 
 type rpc struct {
@@ -16,7 +15,7 @@ type rpc struct {
 }
 
 func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
-	r.p.logger.Debug("create service", zap.String("name", in.GetName()), zap.Uint64("restart_sec", in.GetRestartSec()), zap.String("command", in.GetCommand()), zap.Int64("process number", in.GetProcessNum()))
+	r.p.logger.Debug("create service", "name", in.GetName(), "restart_sec", in.GetRestartSec(), "command", in.GetCommand(), "process number", in.GetProcessNum())
 
 	if in.GetProcessNum() == 0 {
 		return fmt.Errorf("the service with %s name should have at least 1 process", in.GetName())
@@ -68,7 +67,7 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 }
 
 func (r *rpc) Terminate(in *serviceV1.Service, out *serviceV1.Response) error {
-	r.p.logger.Debug("terminate service", zap.String("name", in.GetName()))
+	r.p.logger.Debug("terminate service", "name", in.GetName())
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -93,7 +92,7 @@ func (r *rpc) Terminate(in *serviceV1.Service, out *serviceV1.Response) error {
 }
 
 func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
-	r.p.logger.Debug("restart service", zap.String("name", in.GetName()))
+	r.p.logger.Debug("restart service", "name", in.GetName())
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -137,7 +136,7 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 
 // Status returns status for the service
 func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
-	r.p.logger.Debug("service status", zap.String("name", in.GetName()))
+	r.p.logger.Debug("service status", "name", in.GetName())
 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -171,7 +170,7 @@ func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 
 // Statuses returns status for the service with all processes
 func (r *rpc) Statuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
-	r.p.logger.Debug("service status", zap.String("name", in.GetName()))
+	r.p.logger.Debug("service status", "name", in.GetName())
 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -225,7 +224,7 @@ func (r *rpc) List(_ *serviceV1.Service, out *serviceV1.List) error {
 	defer r.mu.RUnlock()
 
 	r.p.processes.Range(func(key, _ any) bool {
-		r.p.logger.Debug("services list", zap.String("service", key.(string)))
+		r.p.logger.Debug("services list", "service", key.(string))
 		out.Services = append(out.Services, key.(string))
 		return true
 	})

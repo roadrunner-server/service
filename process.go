@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	"time"
 
 	"github.com/roadrunner-server/pool/v2/process"
-	"go.uber.org/zap"
 )
 
 // Process structure contains information about process, restart information, log, errors, etc
@@ -24,7 +24,7 @@ type Process struct {
 	pid     int64
 
 	// logger
-	log     *zap.Logger
+	log     *slog.Logger
 	service *Service
 	cancel  context.CancelFunc
 
@@ -34,11 +34,10 @@ type Process struct {
 }
 
 // NewServiceProcess constructs service process structure
-func NewServiceProcess(service *Service, name string, l *zap.Logger) *Process {
-	log := new(zap.Logger)
-	*log = *l
+func NewServiceProcess(service *Service, name string, l *slog.Logger) *Process {
+	log := l
 	if service.UseServiceName {
-		log = log.Named(name)
+		log = l.With("service", name)
 	}
 
 	// set defaults
@@ -143,7 +142,7 @@ func (p *Process) wait() {
 	// Wait error doesn't matter here
 	err := p.command.Wait()
 	if err != nil {
-		p.log.Error("wait", zap.Error(err))
+		p.log.Error("wait", "error", err)
 	}
 
 	// select is optional here
@@ -163,7 +162,7 @@ func (p *Process) wait() {
 		// and start command again
 		err = p.start()
 		if err != nil {
-			p.log.Error("process start error", zap.Error(err))
+			p.log.Error("process start error", "error", err)
 			return
 		}
 	}

@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/roadrunner-server/errors"
 	"github.com/roadrunner-server/pool/v2/state/process"
-	"go.uber.org/zap"
 )
 
 const PluginName string = "service"
@@ -14,7 +14,7 @@ const PluginName string = "service"
 type Plugin struct {
 	mu sync.Mutex
 
-	logger *zap.Logger
+	logger *slog.Logger
 	cfg    Config
 
 	// all processes attached to the service
@@ -29,7 +29,7 @@ type Configurer interface {
 }
 
 type Logger interface {
-	NamedLogger(name string) *zap.Logger
+	NamedLogger(name string) *slog.Logger
 }
 
 func (p *Plugin) Init(cfg Configurer, log Logger) error {
@@ -83,7 +83,7 @@ func (p *Plugin) Serve() chan error {
 					errCh <- err
 					return false
 				}
-				p.logger.Info("service was started", zap.String("name", key.(string)), zap.String("command", cmdStr))
+				p.logger.Info("service was started", "name", key.(string), "command", cmdStr)
 			}
 
 			return true
@@ -113,7 +113,7 @@ func (p *Plugin) Reset() error {
 			newProc := NewServiceProcess(service, key.(string), p.logger)
 			err := newProc.start()
 			if err != nil {
-				p.logger.Error("unable to start the service", zap.String("name", key.(string)))
+				p.logger.Error("unable to start the service", "name", key.(string))
 				return true
 			}
 
@@ -139,7 +139,7 @@ func (p *Plugin) Workers() []*process.State {
 		for i := range procs {
 			st, err := generalProcessState(procs[i].pid, procs[i].command.String())
 			if err != nil {
-				p.logger.Error("get process state", zap.String("name", k), zap.String("command", procs[i].command.String()))
+				p.logger.Error("get process state", "name", k, "command", procs[i].command.String())
 				return true
 			}
 			states = append(states, st)
@@ -159,7 +159,7 @@ func (p *Plugin) Stop(context.Context) error {
 		for i := range procs {
 			procs[i].stop()
 
-			p.logger.Info("service was stopped", zap.String("name", k), zap.String("command", procs[i].service.Command))
+			p.logger.Info("service was stopped", "name", k, "command", procs[i].service.Command)
 			p.processes.Delete(key)
 		}
 
