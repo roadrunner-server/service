@@ -75,12 +75,10 @@ func TestServiceInit(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -105,7 +103,7 @@ func TestServiceInit(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 10)
 	stopCh <- struct{}{}
@@ -141,12 +139,10 @@ func TestServicePHPCreate(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -171,7 +167,7 @@ func TestServicePHPCreate(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 15)
 	stopCh <- struct{}{}
@@ -209,12 +205,10 @@ func TestServiceTrimOutput(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -239,7 +233,7 @@ func TestServiceTrimOutput(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 5)
 	stopCh <- struct{}{}
@@ -278,12 +272,10 @@ func TestServiceWorkers(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -308,7 +300,7 @@ func TestServiceWorkers(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second)
 	t.Run("workers", workers("service"))
@@ -344,12 +336,10 @@ func TestServiceInitStdout(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -374,7 +364,7 @@ func TestServiceInitStdout(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 5)
 	stopCh <- struct{}{}
@@ -409,12 +399,10 @@ func TestServiceEnv(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -439,7 +427,7 @@ func TestServiceEnv(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 5)
 	stopCh <- struct{}{}
@@ -471,12 +459,10 @@ func TestServiceError(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -501,7 +487,7 @@ func TestServiceError(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 10)
 	stopCh <- struct{}{}
@@ -535,12 +521,10 @@ func TestServiceRestarts(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -565,7 +549,7 @@ func TestServiceRestarts(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 10)
 	stopCh <- struct{}{}
@@ -600,12 +584,10 @@ func TestServiceCreate(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -630,7 +612,7 @@ func TestServiceCreate(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second)
 
@@ -685,12 +667,10 @@ func TestServiceCreateEmptyConfig(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -715,7 +695,7 @@ func TestServiceCreateEmptyConfig(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second)
 
@@ -737,7 +717,7 @@ func TestServiceCreateEmptyConfig(t *testing.T) {
 	l := &serviceProto.List{}
 	t.Run("list", list("127.0.0.1:6001", &serviceProto.Service{}, l))
 
-	for i := 0; i < len(l.GetServices()); i++ {
+	for i := range len(l.GetServices()) {
 		cmd := &serviceProto.Service{
 			Name: l.GetServices()[i],
 		}
@@ -780,12 +760,10 @@ func TestServiceRestart(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -810,7 +788,7 @@ func TestServiceRestart(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second)
 
@@ -832,7 +810,7 @@ func TestServiceRestart(t *testing.T) {
 	l := &serviceProto.List{}
 	t.Run("list", list("127.0.0.1:6001", &serviceProto.Service{}, l))
 
-	for i := 0; i < len(l.GetServices()); i++ {
+	for i := range len(l.GetServices()) {
 		cmd := &serviceProto.Service{
 			Name: l.GetServices()[i],
 		}
@@ -879,12 +857,10 @@ func TestServiceRestartConcurrent(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -909,7 +885,7 @@ func TestServiceRestartConcurrent(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second)
 
@@ -932,9 +908,9 @@ func TestServiceRestartConcurrent(t *testing.T) {
 	l := &serviceProto.List{}
 	t.Run("list", list("127.0.0.1:6001", nil, l))
 
-	for jj := 0; jj < 100; jj++ {
+	for range 100 {
 		go func() {
-			for i := 0; i < len(l.GetServices()); i++ {
+			for i := range len(l.GetServices()) {
 				cmd := &serviceProto.Service{
 					Name: l.GetServices()[i],
 				}
@@ -948,7 +924,7 @@ func TestServiceRestartConcurrent(t *testing.T) {
 		}()
 
 		go func() {
-			for i := 0; i < len(l.GetServices()); i++ {
+			for i := range len(l.GetServices()) {
 				cmd := &serviceProto.Service{
 					Name: l.GetServices()[i],
 				}
@@ -994,12 +970,10 @@ func TestServiceListConcurrent(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -1024,7 +998,7 @@ func TestServiceListConcurrent(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second)
 
@@ -1047,9 +1021,9 @@ func TestServiceListConcurrent(t *testing.T) {
 	l := &serviceProto.List{}
 	t.Run("list", list("127.0.0.1:6001", nil, l))
 
-	for jj := 0; jj < 100; jj++ {
+	for range 100 {
 		go func() {
-			for i := 0; i < len(l.GetServices()); i++ {
+			for i := range len(l.GetServices()) {
 				cmd := &serviceProto.Service{
 					Name: l.GetServices()[i],
 				}
@@ -1066,7 +1040,7 @@ func TestServiceListConcurrent(t *testing.T) {
 		}()
 
 		go func() {
-			for i := 0; i < len(l.GetServices()); i++ {
+			for i := range len(l.GetServices()) {
 				cmd := &serviceProto.Service{
 					Name: l.GetServices()[i],
 				}
@@ -1117,12 +1091,10 @@ func TestServiceStatus(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -1147,7 +1119,7 @@ func TestServiceStatus(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second)
 
@@ -1216,12 +1188,10 @@ func TestServiceInitRemain(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -1246,7 +1216,7 @@ func TestServiceInitRemain(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 10)
 	stopCh <- struct{}{}
@@ -1284,12 +1254,10 @@ func TestServiceReset(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -1314,7 +1282,7 @@ func TestServiceReset(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 2)
 
@@ -1366,12 +1334,10 @@ func TestServiceReset2(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -1396,7 +1362,7 @@ func TestServiceReset2(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 2)
 
@@ -1457,12 +1423,10 @@ func TestServiceReset3(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -1487,7 +1451,7 @@ func TestServiceReset3(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 2)
 
@@ -1537,12 +1501,10 @@ func TestServiceReset4(t *testing.T) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
 	stopCh := make(chan struct{}, 1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case e := <-ch:
@@ -1567,7 +1529,7 @@ func TestServiceReset4(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	time.Sleep(time.Second * 2)
 
@@ -1584,7 +1546,7 @@ func TestServiceReset4(t *testing.T) {
 		l2 := &serviceProto.List{}
 		t.Run("list", list("127.0.0.1:6111", nil, l2))
 		require.Len(t, l2.GetServices(), 2)
-		for i := 0; i < len(l2.GetServices()); i++ {
+		for i := range len(l2.GetServices()) {
 			cmd := &serviceProto.Service{
 				Name: l2.GetServices()[i],
 			}
