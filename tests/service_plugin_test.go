@@ -36,10 +36,9 @@ import (
 
 const serviceRPCAddr = "127.0.0.1:6001"
 
-//nolint:gochecknoglobals // shared transport pools h2 conns across the test suite
-var h2cClient = sync.OnceValue(func() *http.Client {
+func newServiceClient(address string) serviceV1connect.ServiceManagerClient {
 	dialer := &net.Dialer{Timeout: 30 * time.Second}
-	return &http.Client{
+	httpc := &http.Client{
 		Transport: &http2.Transport{
 			AllowHTTP: true,
 			DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
@@ -47,10 +46,7 @@ var h2cClient = sync.OnceValue(func() *http.Client {
 			},
 		},
 	}
-})
-
-func newServiceClient(address string) serviceV1connect.ServiceManagerClient {
-	return serviceV1connect.NewServiceManagerClient(h2cClient(), "http://"+address)
+	return serviceV1connect.NewServiceManagerClient(httpc, "http://"+address)
 }
 
 func TestServiceInit(t *testing.T) {
