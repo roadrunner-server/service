@@ -36,9 +36,10 @@ import (
 
 const serviceRPCAddr = "127.0.0.1:6001"
 
-func newServiceClient(address string) serviceV1connect.ServiceManagerClient {
+//nolint:gochecknoglobals // shared transport pools h2 conns across the test suite
+var h2cClient = sync.OnceValue(func() *http.Client {
 	dialer := &net.Dialer{Timeout: 30 * time.Second}
-	httpc := &http.Client{
+	return &http.Client{
 		Transport: &http2.Transport{
 			AllowHTTP: true,
 			DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
@@ -46,7 +47,10 @@ func newServiceClient(address string) serviceV1connect.ServiceManagerClient {
 			},
 		},
 	}
-	return serviceV1connect.NewServiceManagerClient(httpc, "http://"+address)
+})
+
+func newServiceClient(address string) serviceV1connect.ServiceManagerClient {
+	return serviceV1connect.NewServiceManagerClient(h2cClient(), "http://"+address)
 }
 
 func TestServiceInit(t *testing.T) {
@@ -244,7 +248,7 @@ func TestServiceTrimOutput(t *testing.T) {
 }
 
 func TestServiceWorkers(t *testing.T) {
-	t.Skip("blocked on informer plugin Connect-RPC migration: informer.Workers is unreachable until informer ships (string, http.Handler)")
+	t.Skip("blocked on informer Connect-RPC migration: informer.Workers unreachable on the new wire")
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
@@ -1225,7 +1229,7 @@ func TestServiceInitRemain(t *testing.T) {
 }
 
 func TestServiceReset(t *testing.T) {
-	t.Skip("blocked on resetter plugin Connect-RPC migration: resetter.Reset is unreachable until resetter ships (string, http.Handler)")
+	t.Skip("blocked on resetter Connect-RPC migration: resetter.Reset unreachable on the new wire")
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
@@ -1305,7 +1309,7 @@ func TestServiceReset(t *testing.T) {
 }
 
 func TestServiceReset2(t *testing.T) {
-	t.Skip("blocked on resetter plugin Connect-RPC migration: resetter.Reset is unreachable until resetter ships (string, http.Handler)")
+	t.Skip("blocked on resetter Connect-RPC migration: resetter.Reset unreachable on the new wire")
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{

@@ -127,9 +127,7 @@ func (r *rpc) Restart(_ context.Context, req *connect.Request[serviceV1.Service]
 	return connect.NewResponse(&serviceV1.Response{Ok: true}), nil
 }
 
-// GetStatus returns the status of the first process of the service.
-//
-// Deprecated: use GetStatuses to get correct per-process info.
+// Deprecated: use GetStatuses to get correct info.
 func (r *rpc) GetStatus(_ context.Context, req *connect.Request[serviceV1.Service]) (*connect.Response[serviceV1.Status], error) {
 	in := req.Msg
 	r.p.logger.Debug("service status", "name", in.GetName())
