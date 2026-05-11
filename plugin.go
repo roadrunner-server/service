@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"sync"
 
+	"github.com/roadrunner-server/api-go/v6/service/v1/serviceV1connect"
 	"github.com/roadrunner-server/errors"
 	"github.com/roadrunner-server/pool/v2/state/process"
 )
@@ -174,6 +176,6 @@ func (p *Plugin) Name() string {
 	return PluginName
 }
 
-func (p *Plugin) RPC() any {
-	return &rpc{p: p}
+func (p *Plugin) RPC() (string, http.Handler) {
+	return serviceV1connect.NewServiceManagerHandler(&rpc{p: p})
 }
