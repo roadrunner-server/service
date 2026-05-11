@@ -93,34 +93,42 @@ func (r *rpc) Terminate(_ context.Context, req *connect.Request[serviceV1.Servic
 }
 
 func (r *rpc) Restart(_ context.Context, req *connect.Request[serviceV1.Service]) (*connect.Response[serviceV1.Response], error) {
-	r.p.logger.Debug("restart service", "name", req.Msg.GetName())
+	name := req.Msg.GetName()
+	r.p.logger.Debug("restart service", "name", name)
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	procs, err := r.loadProcesses(req.Msg.GetName())
+	procs, err := r.loadProcesses(name)
 	if err != nil {
 		return nil, err
 	}
 
-	newProcs := make([]*Process, len(procs))
+	// Stop every old process up front; we already hold the write lock, and
+	// nothing else writes to the same map entry while we rebuild.
 	for i := range procs {
 		procs[i].stop()
+	}
 
+	newProcs := make([]*Process, 0, len(procs))
+	for i := range procs {
 		svc := &Service{}
 		*svc = *(procs[i]).service
 
-		newProc := NewServiceProcess(svc, req.Msg.GetName(), r.p.logger)
+		newProc := NewServiceProcess(svc, name, r.p.logger)
 		if err := newProc.start(); err != nil {
-			r.p.processes.Delete(req.Msg.GetName())
+			// roll back any already-started replacements so we don't leak processes
+			for j := range newProcs {
+				newProcs[j].stop()
+			}
+			r.p.processes.Delete(name)
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 
-		newProcs[i] = newProc
-		r.p.processes.Delete(req.Msg.GetName())
+		newProcs = append(newProcs, newProc)
 	}
 
-	r.p.processes.Store(req.Msg.GetName(), newProcs)
+	r.p.processes.Store(name, newProcs)
 	return connect.NewResponse(&serviceV1.Response{Ok: true}), nil
 }
 
