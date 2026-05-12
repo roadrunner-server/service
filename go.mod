@@ -6,7 +6,7 @@ toolchain go1.26.0
 
 require (
 	connectrpc.com/connect v1.19.2
-	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.8
+	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.9
 	github.com/roadrunner-server/errors v1.5.0
 	github.com/roadrunner-server/pool/v2 v2.0.0-beta.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
