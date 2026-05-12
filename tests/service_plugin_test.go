@@ -39,6 +39,7 @@ const serviceRPCAddr = "127.0.0.1:6001"
 func newServiceClient(address string) serviceV1connect.ServiceManagerClient {
 	dialer := &net.Dialer{Timeout: 30 * time.Second}
 	httpc := &http.Client{
+		Timeout: 30 * time.Second,
 		Transport: &http2.Transport{
 			AllowHTTP: true,
 			DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {

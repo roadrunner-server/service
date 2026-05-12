@@ -59,7 +59,7 @@ func startServiceAPIContainer(t *testing.T) func() {
 	wg.Go(func() {
 		select {
 		case e := <-ch:
-			require.NoError(t, e.Error, "container reported error")
+			t.Errorf("container reported error: %v", e.Error)
 		case <-stop:
 		}
 	})
@@ -81,6 +81,7 @@ func TestServiceConnectAPI(t *testing.T) {
 	defer stop()
 
 	httpc := &http.Client{
+		Timeout: 30 * time.Second,
 		Transport: &http2.Transport{
 			AllowHTTP: true,
 			DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
@@ -89,7 +90,8 @@ func TestServiceConnectAPI(t *testing.T) {
 		},
 	}
 	client := serviceV1connect.NewServiceManagerClient(httpc, "http://"+serviceAPIAddr)
-	ctx := t.Context()
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
 
 	const name = "connect-svc"
 
