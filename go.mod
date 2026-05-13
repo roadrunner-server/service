@@ -6,7 +6,7 @@ toolchain go1.26.0
 
 require (
 	connectrpc.com/connect v1.19.2
-	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.8
+	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.9
 	github.com/roadrunner-server/errors v1.5.0
 	github.com/roadrunner-server/pool/v2 v2.0.0-beta.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
@@ -16,9 +16,9 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.1 // indirect
-	github.com/tklauser/go-sysconf v0.3.16 // indirect
-	github.com/tklauser/numcpus v0.11.0 // indirect
+	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.2 // indirect
+	github.com/tklauser/go-sysconf v0.4.0 // indirect
+	github.com/tklauser/numcpus v0.12.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/sys v0.44.0 // indirect
