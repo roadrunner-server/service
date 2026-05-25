@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -38,7 +37,7 @@ func TestServiceNativeCreate(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 
-	client := serviceV1connect.NewServiceManagerClient(srv.Client(), strings.TrimSuffix(srv.URL, "/"))
+	client := serviceV1connect.NewServiceManagerClient(srv.Client(), srv.URL)
 	resp, err := client.CreateService(t.Context(), connect.NewRequest(&serviceProto.Create{
 		Name:       "listen-jobs",
 		Command:    "sleep 1",
