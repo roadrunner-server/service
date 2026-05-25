@@ -2,23 +2,21 @@ module tests
 
 go 1.26
 
-toolchain go1.26.0
+toolchain go1.26.3
 
 require (
-	connectrpc.com/connect v1.19.2
-	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.8
+	connectrpc.com/connect v1.20.0
+	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.12
 	github.com/roadrunner-server/config/v6 v6.0.0-beta.3
 	github.com/roadrunner-server/endure/v2 v2.6.2
-	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.1
 	github.com/roadrunner-server/informer/v6 v6.0.0-beta.1
 	github.com/roadrunner-server/logger/v6 v6.0.0-beta.3
-	github.com/roadrunner-server/pool/v2 v2.0.0-beta.1
 	github.com/roadrunner-server/resetter/v6 v6.0.0-beta.2
 	github.com/roadrunner-server/rpc/v6 v6.0.0-beta.4
 	github.com/roadrunner-server/service/v6 v6.0.0
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/net v0.54.0
-	google.golang.org/grpc v1.81.0
+	golang.org/x/net v0.55.0
+	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
 )
 
@@ -38,6 +36,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/roadrunner-server/api-plugins/v6 v6.0.0-beta.2 // indirect
 	github.com/roadrunner-server/errors v1.5.0 // indirect
+	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.2 // indirect
+	github.com/roadrunner-server/pool/v2 v2.0.0-beta.1 // indirect
 	github.com/roadrunner-server/tcplisten v1.5.2 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
@@ -52,7 +52,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.28.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
