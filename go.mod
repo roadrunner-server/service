@@ -5,8 +5,8 @@ go 1.26
 toolchain go1.26.3
 
 require (
-	connectrpc.com/connect v1.19.2
-	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.8
+	connectrpc.com/connect v1.20.0
+	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.12
 	github.com/roadrunner-server/errors v1.5.0
 	github.com/roadrunner-server/pool/v2 v2.0.0-beta.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
@@ -16,14 +16,14 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.1 // indirect
-	github.com/tklauser/go-sysconf v0.3.16 // indirect
-	github.com/tklauser/numcpus v0.11.0 // indirect
+	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.2 // indirect
+	github.com/tklauser/go-sysconf v0.4.0 // indirect
+	github.com/tklauser/numcpus v0.12.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	golang.org/x/net v0.54.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
-	google.golang.org/grpc v1.81.0 // indirect
+	google.golang.org/grpc v1.81.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
