@@ -29,7 +29,7 @@ type Process struct {
 	cancel  context.CancelFunc
 
 	// process start time
-	stopped  uint64
+	stopped  atomic.Uint64
 	sigintCh chan struct{}
 }
 
@@ -154,7 +154,7 @@ func (p *Process) wait() {
 
 	// wait for restart delay
 	if p.service.RemainAfterExit {
-		if atomic.LoadUint64(&p.stopped) > 0 {
+		if p.stopped.Load() > 0 {
 			return
 		}
 		// wait for the delay
@@ -170,7 +170,7 @@ func (p *Process) wait() {
 
 // stop can be only sent by endure when plugin stopped
 func (p *Process) stop() {
-	atomic.StoreUint64(&p.stopped, 1)
+	p.stopped.Store(1)
 	p.Lock()
 	defer p.Unlock()
 
