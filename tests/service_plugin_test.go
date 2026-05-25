@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"net/rpc"
 	"os"
 	"os/signal"
 	"sync"
@@ -17,14 +16,16 @@ import (
 	mocklogger "tests/mock"
 
 	"connectrpc.com/connect"
+	informerProto "github.com/roadrunner-server/api-go/v6/informer/v1"
+	"github.com/roadrunner-server/api-go/v6/informer/v1/informerV1connect"
+	resetterProto "github.com/roadrunner-server/api-go/v6/resetter/v1"
+	"github.com/roadrunner-server/api-go/v6/resetter/v1/resetterV1connect"
 	serviceProto "github.com/roadrunner-server/api-go/v6/service/v1"
 	"github.com/roadrunner-server/api-go/v6/service/v1/serviceV1connect"
 	"github.com/roadrunner-server/config/v6"
 	"github.com/roadrunner-server/endure/v2"
-	goridgeRpc "github.com/roadrunner-server/goridge/v4/pkg/rpc"
 	"github.com/roadrunner-server/informer/v6"
 	"github.com/roadrunner-server/logger/v6"
-	"github.com/roadrunner-server/pool/v2/state/process"
 	"github.com/roadrunner-server/resetter/v6"
 	rpcPlugin "github.com/roadrunner-server/rpc/v6"
 	"github.com/roadrunner-server/service/v6"
@@ -36,9 +37,9 @@ import (
 
 const serviceRPCAddr = "127.0.0.1:6001"
 
-func newServiceClient(address string) serviceV1connect.ServiceManagerClient {
+func newHTTPClient() *http.Client {
 	dialer := &net.Dialer{Timeout: 30 * time.Second}
-	httpc := &http.Client{
+	return &http.Client{
 		Timeout: 30 * time.Second,
 		Transport: &http2.Transport{
 			AllowHTTP: true,
@@ -47,7 +48,18 @@ func newServiceClient(address string) serviceV1connect.ServiceManagerClient {
 			},
 		},
 	}
-	return serviceV1connect.NewServiceManagerClient(httpc, "http://"+address)
+}
+
+func newServiceClient(address string) serviceV1connect.ServiceManagerClient {
+	return serviceV1connect.NewServiceManagerClient(newHTTPClient(), "http://"+address)
+}
+
+func newResetterClient(address string) resetterV1connect.ResetterServiceClient {
+	return resetterV1connect.NewResetterServiceClient(newHTTPClient(), "http://"+address)
+}
+
+func newInformerClient(address string) informerV1connect.InformerServiceClient {
+	return informerV1connect.NewInformerServiceClient(newHTTPClient(), "http://"+address)
 }
 
 func TestServiceInit(t *testing.T) {
@@ -245,7 +257,6 @@ func TestServiceTrimOutput(t *testing.T) {
 }
 
 func TestServiceWorkers(t *testing.T) {
-	t.Skip("blocked on informer Connect-RPC migration: informer.Workers unreachable on the new wire")
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
@@ -1226,7 +1237,6 @@ func TestServiceInitRemain(t *testing.T) {
 }
 
 func TestServiceReset(t *testing.T) {
-	t.Skip("blocked on resetter Connect-RPC migration: resetter.Reset unreachable on the new wire")
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
@@ -1288,14 +1298,9 @@ func TestServiceReset(t *testing.T) {
 
 	time.Sleep(time.Second * 2)
 
-	conn, err := net.Dial("tcp", "127.0.0.1:6001")
+	resp, err := newResetterClient(serviceRPCAddr).Reset(t.Context(), connect.NewRequest(&resetterProto.ResetRequest{Plugin: "service"}))
 	require.NoError(t, err)
-	client := rpc.NewClientWithCodec(goridgeRpc.NewClientCodec(conn))
-
-	var ok bool
-	err = client.Call("resetter.Reset", "service", &ok)
-	require.NoError(t, err)
-	require.True(t, ok)
+	require.True(t, resp.Msg.GetOk())
 
 	time.Sleep(time.Second * 5)
 	stopCh <- struct{}{}
@@ -1306,7 +1311,6 @@ func TestServiceReset(t *testing.T) {
 }
 
 func TestServiceReset2(t *testing.T) {
-	t.Skip("blocked on resetter Connect-RPC migration: resetter.Reset unreachable on the new wire")
 	cont := endure.New(slog.LevelDebug)
 
 	cfg := &config.Plugin{
@@ -1372,14 +1376,14 @@ func TestServiceReset2(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		conn, err := net.Dial("tcp", "127.0.0.1:6112") //nolint:noctx // skipped test; goridge wire unreachable post-Connect migration
-		require.NoError(t, err)
-		client := rpc.NewClientWithCodec(goridgeRpc.NewClientCodec(conn))
-
-		var ok bool
-		err = client.Call("resetter.Reset", "service", &ok)
-		require.NoError(t, err)
-		require.True(t, ok)
+		resp, callErr := newResetterClient("127.0.0.1:6112").Reset(t.Context(), connect.NewRequest(&resetterProto.ResetRequest{Plugin: "service"}))
+		// assert (not require) inside goroutine: assert routes through t.Errorf,
+		// which is documented safe for concurrent use; require.FailNow would only
+		// terminate this goroutine and silently let the test pass.
+		assert.NoError(t, callErr)
+		if callErr == nil {
+			assert.True(t, resp.Msg.GetOk())
+		}
 	}()
 
 	time.Sleep(time.Second * 10)
@@ -1612,17 +1616,8 @@ func list(address string, in *serviceProto.Service, out *serviceProto.List) func
 
 func workers(service string) func(t *testing.T) {
 	return func(t *testing.T) {
-		conn, err := net.Dial("tcp", "127.0.0.1:6001") //nolint:noctx // skipped test; goridge wire unreachable post-Connect migration
+		resp, err := newInformerClient(serviceRPCAddr).GetWorkers(t.Context(), connect.NewRequest(&informerProto.GetWorkersRequest{Plugin: service}))
 		require.NoError(t, err)
-		client := rpc.NewClientWithCodec(goridgeRpc.NewClientCodec(conn))
-		// WorkerList contains a list of workers.
-		lst := struct {
-			// Workers is a list of workers.
-			Workers []process.State `json:"workers"`
-		}{}
-
-		err = client.Call("informer.Workers", service, &lst)
-		require.NoError(t, err)
-		require.Len(t, lst.Workers, 20)
+		require.Len(t, resp.Msg.GetWorkers(), 20)
 	}
 }
