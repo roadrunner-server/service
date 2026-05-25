@@ -1376,9 +1376,14 @@ func TestServiceReset2(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		resp, err := newResetterClient("127.0.0.1:6112").Reset(t.Context(), connect.NewRequest(&resetterProto.ResetRequest{Plugin: "service"}))
-		require.NoError(t, err)
-		require.True(t, resp.Msg.GetOk())
+		resp, callErr := newResetterClient("127.0.0.1:6112").Reset(t.Context(), connect.NewRequest(&resetterProto.ResetRequest{Plugin: "service"}))
+		// assert (not require) inside goroutine: assert routes through t.Errorf,
+		// which is documented safe for concurrent use; require.FailNow would only
+		// terminate this goroutine and silently let the test pass.
+		assert.NoError(t, callErr)
+		if callErr == nil {
+			assert.True(t, resp.Msg.GetOk())
+		}
 	}()
 
 	time.Sleep(time.Second * 10)
