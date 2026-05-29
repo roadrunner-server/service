@@ -109,10 +109,8 @@ func (p *Plugin) Reset() error {
 			procs[i].stop()
 			p.processes.Delete(key)
 
-			service := &Service{}
-			*service = *(procs[i]).service
-
-			newProc := NewServiceProcess(service, key.(string), p.logger)
+			svc := *procs[i].service
+			newProc := NewServiceProcess(&svc, key.(string), p.logger)
 			err := newProc.start()
 			if err != nil {
 				p.logger.Error("unable to start the service", "name", key.(string))
