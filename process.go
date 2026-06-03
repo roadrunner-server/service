@@ -3,7 +3,6 @@ package service
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -29,7 +28,7 @@ type Process struct {
 	cancel  context.CancelFunc
 
 	// process start time
-	stopped  atomic.Uint64
+	stopped  atomic.Bool
 	sigintCh chan struct{}
 }
 
@@ -58,7 +57,7 @@ func NewServiceProcess(service *Service, name string, l *slog.Logger) *Process {
 
 // write a message to the log (stderr)
 func (p *Process) Write(b []byte) (int, error) {
-	p.log.Info(string(bytes.TrimRight(bytes.TrimRight(bytes.TrimSpace(b), "\n"), "\t")))
+	p.log.Info(string(bytes.TrimSpace(b)))
 	return len(b), nil
 }
 
@@ -154,7 +153,7 @@ func (p *Process) wait() {
 
 	// wait for restart delay
 	if p.service.RemainAfterExit {
-		if p.stopped.Load() > 0 {
+		if p.stopped.Load() {
 			return
 		}
 		// wait for the delay
@@ -170,7 +169,7 @@ func (p *Process) wait() {
 
 // stop can be only sent by endure when plugin stopped
 func (p *Process) stop() {
-	p.stopped.Store(1)
+	p.stopped.Store(true)
 	p.Lock()
 	defer p.Unlock()
 
@@ -207,7 +206,7 @@ func (p *Process) setEnv(e Env) []string {
 	env := make([]string, 0, len(os.Environ())+len(e))
 	env = append(env, os.Environ()...)
 	for k, v := range e {
-		env = append(env, fmt.Sprintf("%s=%s", strings.ToUpper(k), os.Expand(v, os.Getenv)))
+		env = append(env, strings.ToUpper(k)+"="+os.ExpandEnv(v))
 	}
 	return env
 }

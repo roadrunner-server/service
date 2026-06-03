@@ -26,26 +26,16 @@ type Config struct {
 }
 
 func (c *Config) InitDefault() {
-	if len(c.Services) > 0 {
-		for k, v := range c.Services {
-			val := c.Services[k]
-			c.Services[k] = val
-
-			if v.ProcessNum <= 0 {
-				val := c.Services[k]
-				val.ProcessNum = 1
-				c.Services[k] = val
-			}
-			if v.RestartSec == 0 {
-				val := c.Services[k]
-				val.RestartSec = 30
-				c.Services[k] = val
-			}
-
-			// default 5 seconds
-			if v.TimeoutStopSec == 0 {
-				v.TimeoutStopSec = 5
-			}
+	for _, v := range c.Services {
+		if v.ProcessNum <= 0 {
+			v.ProcessNum = 1
+		}
+		if v.RestartSec == 0 {
+			v.RestartSec = 30
+		}
+		// default 5 seconds
+		if v.TimeoutStopSec == 0 {
+			v.TimeoutStopSec = 5
 		}
 	}
 }
