@@ -1,13 +1,11 @@
 package service
 
 import (
-	"context"
 	stderr "errors"
 	"fmt"
 	"sync"
 	"time"
 
-	"connectrpc.com/connect"
 	shared "github.com/roadrunner-server/api-go/v6/common/v1"
 	serviceV1 "github.com/roadrunner-server/api-go/v6/service/v1"
 )
@@ -25,37 +23,37 @@ type rpc struct {
 func (r *rpc) loadProcesses(name string) ([]*Process, error) {
 	v, ok := r.p.processes.Load(name)
 	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("%w: %s", errNoSuchService, name))
+		return nil, fmt.Errorf("%w: %s", errNoSuchService, name)
 	}
 	return v.([]*Process), nil
 }
 
-func (r *rpc) CreateService(_ context.Context, req *connect.Request[serviceV1.Create]) (*connect.Response[serviceV1.Response], error) {
-	r.p.logger.Debug("create service", "name", req.Msg.GetName(), "restart_sec", req.Msg.GetRestartSec(), "command", req.Msg.GetCommand(), "process number", req.Msg.GetProcessNum())
+func (r *rpc) CreateService(in *serviceV1.Create, out *serviceV1.Response) error {
+	r.p.logger.Debug("create service", "name", in.GetName(), "restart_sec", in.GetRestartSec(), "command", in.GetCommand(), "process number", in.GetProcessNum())
 
-	if req.Msg.GetProcessNum() == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("the service with %s name should have at least 1 process", req.Msg.GetName()))
+	if in.GetProcessNum() == 0 {
+		return fmt.Errorf("the service with %s name should have at least 1 process", in.GetName())
 	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, ok := r.p.processes.Load(req.Msg.GetName()); ok {
-		return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("%w: %s", errServiceExists, req.Msg.GetName()))
+	if _, ok := r.p.processes.Load(in.GetName()); ok {
+		return fmt.Errorf("%w: %s", errServiceExists, in.GetName())
 	}
 
-	procs := make([]*Process, 0, req.Msg.GetProcessNum())
-	for range int(req.Msg.GetProcessNum()) {
+	procs := make([]*Process, 0, in.GetProcessNum())
+	for range int(in.GetProcessNum()) {
 		proc := NewServiceProcess(&Service{
-			Command:         req.Msg.GetCommand(),
-			ProcessNum:      int(req.Msg.GetProcessNum()),
-			ExecTimeout:     time.Second * time.Duration(req.Msg.GetExecTimeout()),
-			RemainAfterExit: req.Msg.GetRemainAfterExit(),
-			RestartSec:      req.Msg.GetRestartSec(),
-			UseServiceName:  req.Msg.GetServiceNameInLogs(),
-			TimeoutStopSec:  req.Msg.GetTimeoutStopSec(),
-			Env:             req.Msg.GetEnv(),
-		}, req.Msg.GetName(), r.p.logger)
+			Command:         in.GetCommand(),
+			ProcessNum:      int(in.GetProcessNum()),
+			ExecTimeout:     time.Second * time.Duration(in.GetExecTimeout()),
+			RemainAfterExit: in.GetRemainAfterExit(),
+			RestartSec:      in.GetRestartSec(),
+			UseServiceName:  in.GetServiceNameInLogs(),
+			TimeoutStopSec:  in.GetTimeoutStopSec(),
+			Env:             in.GetEnv(),
+		}, in.GetName(), r.p.logger)
 
 		if err := proc.start(); err != nil {
 			// if some process from the group failed -> deallocate the whole group
@@ -65,35 +63,37 @@ func (r *rpc) CreateService(_ context.Context, req *connect.Request[serviceV1.Cr
 					procs[i].stop()
 				}
 			}
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return err
 		}
 
 		procs = append(procs, proc)
 	}
 
-	r.p.processes.Store(req.Msg.GetName(), procs)
-	return connect.NewResponse(&serviceV1.Response{Ok: true}), nil
+	r.p.processes.Store(in.GetName(), procs)
+	out.Ok = true
+	return nil
 }
 
-func (r *rpc) Terminate(_ context.Context, req *connect.Request[serviceV1.Service]) (*connect.Response[serviceV1.Response], error) {
-	r.p.logger.Debug("terminate service", "name", req.Msg.GetName())
+func (r *rpc) Terminate(in *serviceV1.Service, out *serviceV1.Response) error {
+	r.p.logger.Debug("terminate service", "name", in.GetName())
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	v, ok := r.p.processes.LoadAndDelete(req.Msg.GetName())
+	v, ok := r.p.processes.LoadAndDelete(in.GetName())
 	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("%w: %s", errNoSuchService, req.Msg.GetName()))
+		return fmt.Errorf("%w: %s", errNoSuchService, in.GetName())
 	}
 	for _, proc := range v.([]*Process) {
 		proc.stop()
 	}
 
-	return connect.NewResponse(&serviceV1.Response{Ok: true}), nil
+	out.Ok = true
+	return nil
 }
 
-func (r *rpc) Restart(_ context.Context, req *connect.Request[serviceV1.Service]) (*connect.Response[serviceV1.Response], error) {
-	name := req.Msg.GetName()
+func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
+	name := in.GetName()
 	r.p.logger.Debug("restart service", "name", name)
 
 	r.mu.Lock()
@@ -101,7 +101,7 @@ func (r *rpc) Restart(_ context.Context, req *connect.Request[serviceV1.Service]
 
 	procs, err := r.loadProcesses(name)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Stop every old process up front; we already hold the write lock, and
@@ -122,33 +122,33 @@ func (r *rpc) Restart(_ context.Context, req *connect.Request[serviceV1.Service]
 				newProcs[j].stop()
 			}
 			r.p.processes.Delete(name)
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return err
 		}
 
 		newProcs = append(newProcs, newProc)
 	}
 
 	r.p.processes.Store(name, newProcs)
-	return connect.NewResponse(&serviceV1.Response{Ok: true}), nil
+	out.Ok = true
+	return nil
 }
 
 // Deprecated: use GetStatuses to get correct info.
-func (r *rpc) GetStatus(_ context.Context, req *connect.Request[serviceV1.Service]) (*connect.Response[serviceV1.Status], error) {
-	r.p.logger.Debug("service status", "name", req.Msg.GetName())
+func (r *rpc) GetStatus(in *serviceV1.Service, out *serviceV1.Status) error {
+	r.p.logger.Debug("service status", "name", in.GetName())
 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	procs, err := r.loadProcesses(req.Msg.GetName())
+	procs, err := r.loadProcesses(in.GetName())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	out := &serviceV1.Status{}
 	for i := range procs {
 		state, err := generalProcessState(procs[i].pid, procs[i].command.String())
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return err
 		}
 
 		out.Pid = int32(state.Pid) //nolint:gosec
@@ -157,21 +157,20 @@ func (r *rpc) GetStatus(_ context.Context, req *connect.Request[serviceV1.Servic
 		out.MemoryUsage = state.MemoryUsage
 	}
 
-	return connect.NewResponse(out), nil
+	return nil
 }
 
-func (r *rpc) GetStatuses(_ context.Context, req *connect.Request[serviceV1.Service]) (*connect.Response[serviceV1.Statuses], error) {
-	r.p.logger.Debug("service status", "name", req.Msg.GetName())
+func (r *rpc) GetStatuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
+	r.p.logger.Debug("service status", "name", in.GetName())
 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	procs, err := r.loadProcesses(req.Msg.GetName())
+	procs, err := r.loadProcesses(in.GetName())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	out := &serviceV1.Statuses{}
 	for i := range procs {
 		state, err := generalProcessState(procs[i].pid, procs[i].command.String())
 		if err != nil {
@@ -198,19 +197,18 @@ func (r *rpc) GetStatuses(_ context.Context, req *connect.Request[serviceV1.Serv
 		})
 	}
 
-	return connect.NewResponse(out), nil
+	return nil
 }
 
-func (r *rpc) ListServices(_ context.Context, _ *connect.Request[serviceV1.Service]) (*connect.Response[serviceV1.List], error) {
+func (r *rpc) ListServices(_ *serviceV1.Service, out *serviceV1.List) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	out := &serviceV1.List{}
 	r.p.processes.Range(func(key, _ any) bool {
 		r.p.logger.Debug("services list", "service", key.(string))
 		out.Services = append(out.Services, key.(string))
 		return true
 	})
 
-	return connect.NewResponse(out), nil
+	return nil
 }
