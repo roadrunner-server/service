@@ -1287,10 +1287,10 @@ func TestServiceReset(t *testing.T) {
 	time.Sleep(time.Second * 2)
 
 	client := newRPCClient(t, serviceRPCAddr)
+	defer func() { _ = client.Close() }()
 	resp := &resetterProto.Response{}
 	require.NoError(t, client.Call("resetter.Reset", &resetterProto.ResetRequest{Plugin: "service"}, resp))
 	require.True(t, resp.GetOk())
-	_ = client.Close()
 
 	time.Sleep(time.Second * 5)
 	stopCh <- struct{}{}
