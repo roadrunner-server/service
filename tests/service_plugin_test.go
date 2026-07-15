@@ -1,11 +1,9 @@
 package service
 
 import (
-	"context"
-	"crypto/tls"
 	"log/slog"
 	"net"
-	"net/http"
+	"net/rpc"
 	"os"
 	"os/signal"
 	"sync"
@@ -15,15 +13,12 @@ import (
 
 	mocklogger "tests/mock"
 
-	"connectrpc.com/connect"
 	informerProto "github.com/roadrunner-server/api-go/v6/informer/v1"
-	"github.com/roadrunner-server/api-go/v6/informer/v1/informerV1connect"
 	resetterProto "github.com/roadrunner-server/api-go/v6/resetter/v1"
-	"github.com/roadrunner-server/api-go/v6/resetter/v1/resetterV1connect"
 	serviceProto "github.com/roadrunner-server/api-go/v6/service/v1"
-	"github.com/roadrunner-server/api-go/v6/service/v1/serviceV1connect"
 	"github.com/roadrunner-server/config/v6"
 	"github.com/roadrunner-server/endure/v2"
+	goridgeRpc "github.com/roadrunner-server/goridge/v4/pkg/rpc"
 	"github.com/roadrunner-server/informer/v6"
 	"github.com/roadrunner-server/logger/v6"
 	"github.com/roadrunner-server/resetter/v6"
@@ -31,35 +26,28 @@ import (
 	"github.com/roadrunner-server/service/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/http2"
-	"google.golang.org/protobuf/proto"
 )
 
 const serviceRPCAddr = "127.0.0.1:6001"
 
-func newHTTPClient() *http.Client {
-	dialer := &net.Dialer{Timeout: 30 * time.Second}
-	return &http.Client{
-		Timeout: 30 * time.Second,
-		Transport: &http2.Transport{
-			AllowHTTP: true,
-			DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
-				return dialer.DialContext(ctx, network, addr)
-			},
-		},
+func newRPCClient(t *testing.T, address string) *rpc.Client {
+	t.Helper()
+	var (
+		conn net.Conn
+		err  error
+	)
+	d := net.Dialer{Timeout: 5 * time.Second}
+	// simple dial retry loop: the goridge RPC server may not be accepting yet
+	// right after Serve, or during the port handoff between sequential tests.
+	for range 10 {
+		conn, err = d.DialContext(t.Context(), "tcp", address)
+		if err == nil {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
-}
-
-func newServiceClient(address string) serviceV1connect.ServiceManagerClient {
-	return serviceV1connect.NewServiceManagerClient(newHTTPClient(), "http://"+address)
-}
-
-func newResetterClient(address string) resetterV1connect.ResetterServiceClient {
-	return resetterV1connect.NewResetterServiceClient(newHTTPClient(), "http://"+address)
-}
-
-func newInformerClient(address string) informerV1connect.InformerServiceClient {
-	return informerV1connect.NewInformerServiceClient(newHTTPClient(), "http://"+address)
+	require.NoError(t, err)
+	return rpc.NewClientWithCodec(goridgeRpc.NewClientCodec(conn))
 }
 
 func TestServiceInit(t *testing.T) {
@@ -1298,9 +1286,11 @@ func TestServiceReset(t *testing.T) {
 
 	time.Sleep(time.Second * 2)
 
-	resp, err := newResetterClient(serviceRPCAddr).Reset(t.Context(), connect.NewRequest(&resetterProto.ResetRequest{Plugin: "service"}))
-	require.NoError(t, err)
-	require.True(t, resp.Msg.GetOk())
+	client := newRPCClient(t, serviceRPCAddr)
+	defer func() { _ = client.Close() }()
+	resp := &resetterProto.Response{}
+	require.NoError(t, client.Call("resetter.Reset", &resetterProto.ResetRequest{Plugin: "service"}, resp))
+	require.True(t, resp.GetOk())
 
 	time.Sleep(time.Second * 5)
 	stopCh <- struct{}{}
@@ -1376,13 +1366,21 @@ func TestServiceReset2(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		resp, callErr := newResetterClient("127.0.0.1:6112").Reset(t.Context(), connect.NewRequest(&resetterProto.ResetRequest{Plugin: "service"}))
+		d := net.Dialer{Timeout: 5 * time.Second}
+		conn, dialErr := d.DialContext(t.Context(), "tcp", "127.0.0.1:6112")
 		// assert (not require) inside goroutine: assert routes through t.Errorf,
 		// which is documented safe for concurrent use; require.FailNow would only
 		// terminate this goroutine and silently let the test pass.
+		if !assert.NoError(t, dialErr) {
+			return
+		}
+		client := rpc.NewClientWithCodec(goridgeRpc.NewClientCodec(conn))
+		defer func() { _ = client.Close() }()
+		resp := &resetterProto.Response{}
+		callErr := client.Call("resetter.Reset", &resetterProto.ResetRequest{Plugin: "service"}, resp)
 		assert.NoError(t, callErr)
 		if callErr == nil {
-			assert.True(t, resp.Msg.GetOk())
+			assert.True(t, resp.GetOk())
 		}
 	}()
 
@@ -1576,48 +1574,53 @@ func TestServiceReset4(t *testing.T) {
 
 func create(in *serviceProto.Create, out *serviceProto.Response) func(t *testing.T) {
 	return func(t *testing.T) {
-		resp, err := newServiceClient(serviceRPCAddr).CreateService(t.Context(), connect.NewRequest(in))
-		require.NoError(t, err)
-		proto.Merge(out, resp.Msg)
+		client := newRPCClient(t, serviceRPCAddr)
+		defer func() { _ = client.Close() }()
+		require.NoError(t, client.Call("service.CreateService", in, out))
 	}
 }
 
 func terminate(address string, in *serviceProto.Service, out *serviceProto.Response) func(t *testing.T) {
 	return func(t *testing.T) {
-		resp, err := newServiceClient(address).Terminate(t.Context(), connect.NewRequest(in))
-		require.NoError(t, err)
-		proto.Merge(out, resp.Msg)
+		client := newRPCClient(t, address)
+		defer func() { _ = client.Close() }()
+		require.NoError(t, client.Call("service.Terminate", in, out))
 	}
 }
 
 func restart(in *serviceProto.Service, out *serviceProto.Response) func(t *testing.T) {
 	return func(t *testing.T) {
-		resp, err := newServiceClient(serviceRPCAddr).Restart(t.Context(), connect.NewRequest(in))
-		require.NoError(t, err)
-		proto.Merge(out, resp.Msg)
+		client := newRPCClient(t, serviceRPCAddr)
+		defer func() { _ = client.Close() }()
+		require.NoError(t, client.Call("service.Restart", in, out))
 	}
 }
 
 func status(in *serviceProto.Service, out *serviceProto.Statuses) func(t *testing.T) {
 	return func(t *testing.T) {
-		resp, err := newServiceClient(serviceRPCAddr).GetStatuses(t.Context(), connect.NewRequest(in))
-		require.NoError(t, err)
-		proto.Merge(out, resp.Msg)
+		client := newRPCClient(t, serviceRPCAddr)
+		defer func() { _ = client.Close() }()
+		require.NoError(t, client.Call("service.GetStatuses", in, out))
 	}
 }
 
 func list(address string, in *serviceProto.Service, out *serviceProto.List) func(t *testing.T) {
 	return func(t *testing.T) {
-		resp, err := newServiceClient(address).ListServices(t.Context(), connect.NewRequest(in))
-		require.NoError(t, err)
-		proto.Merge(out, resp.Msg)
+		if in == nil {
+			in = &serviceProto.Service{}
+		}
+		client := newRPCClient(t, address)
+		defer func() { _ = client.Close() }()
+		require.NoError(t, client.Call("service.ListServices", in, out))
 	}
 }
 
 func workers(service string) func(t *testing.T) {
 	return func(t *testing.T) {
-		resp, err := newInformerClient(serviceRPCAddr).GetWorkers(t.Context(), connect.NewRequest(&informerProto.GetWorkersRequest{Plugin: service}))
-		require.NoError(t, err)
-		require.Len(t, resp.Msg.GetWorkers(), 20)
+		client := newRPCClient(t, serviceRPCAddr)
+		defer func() { _ = client.Close() }()
+		resp := &informerProto.WorkersList{}
+		require.NoError(t, client.Call("informer.GetWorkers", &informerProto.GetWorkersRequest{Plugin: service}, resp))
+		require.Len(t, resp.GetWorkers(), 20)
 	}
 }
