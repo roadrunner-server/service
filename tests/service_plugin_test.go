@@ -13,14 +13,13 @@ import (
 
 	mocklogger "tests/mock"
 
-	informerProto "github.com/roadrunner-server/api-go/v6/informer/v1"
-	resetterProto "github.com/roadrunner-server/api-go/v6/resetter/v1"
 	serviceProto "github.com/roadrunner-server/api-go/v6/service/v1"
 	"github.com/roadrunner-server/config/v6"
 	"github.com/roadrunner-server/endure/v2"
 	goridgeRpc "github.com/roadrunner-server/goridge/v4/pkg/rpc"
 	"github.com/roadrunner-server/informer/v6"
 	"github.com/roadrunner-server/logger/v6"
+	"github.com/roadrunner-server/pool/v2/state/process"
 	"github.com/roadrunner-server/resetter/v6"
 	rpcPlugin "github.com/roadrunner-server/rpc/v6"
 	"github.com/roadrunner-server/service/v6"
@@ -1288,9 +1287,9 @@ func TestServiceReset(t *testing.T) {
 
 	client := newRPCClient(t, serviceRPCAddr)
 	defer func() { _ = client.Close() }()
-	resp := &resetterProto.Response{}
-	require.NoError(t, client.Call("resetter.Reset", &resetterProto.ResetRequest{Plugin: "service"}, resp))
-	require.True(t, resp.GetOk())
+	var ok bool
+	require.NoError(t, client.Call("resetter.Reset", "service", &ok))
+	require.True(t, ok)
 
 	time.Sleep(time.Second * 5)
 	stopCh <- struct{}{}
@@ -1376,11 +1375,11 @@ func TestServiceReset2(t *testing.T) {
 		}
 		client := rpc.NewClientWithCodec(goridgeRpc.NewClientCodec(conn))
 		defer func() { _ = client.Close() }()
-		resp := &resetterProto.Response{}
-		callErr := client.Call("resetter.Reset", &resetterProto.ResetRequest{Plugin: "service"}, resp)
+		var ok bool
+		callErr := client.Call("resetter.Reset", "service", &ok)
 		assert.NoError(t, callErr)
 		if callErr == nil {
-			assert.True(t, resp.GetOk())
+			assert.True(t, ok)
 		}
 	}()
 
@@ -1576,7 +1575,7 @@ func create(in *serviceProto.Create, out *serviceProto.Response) func(t *testing
 	return func(t *testing.T) {
 		client := newRPCClient(t, serviceRPCAddr)
 		defer func() { _ = client.Close() }()
-		require.NoError(t, client.Call("service.CreateService", in, out))
+		require.NoError(t, client.Call("service.Create", in, out))
 	}
 }
 
@@ -1600,7 +1599,7 @@ func status(in *serviceProto.Service, out *serviceProto.Statuses) func(t *testin
 	return func(t *testing.T) {
 		client := newRPCClient(t, serviceRPCAddr)
 		defer func() { _ = client.Close() }()
-		require.NoError(t, client.Call("service.GetStatuses", in, out))
+		require.NoError(t, client.Call("service.Statuses", in, out))
 	}
 }
 
@@ -1611,7 +1610,7 @@ func list(address string, in *serviceProto.Service, out *serviceProto.List) func
 		}
 		client := newRPCClient(t, address)
 		defer func() { _ = client.Close() }()
-		require.NoError(t, client.Call("service.ListServices", in, out))
+		require.NoError(t, client.Call("service.List", in, out))
 	}
 }
 
@@ -1619,8 +1618,10 @@ func workers(service string) func(t *testing.T) {
 	return func(t *testing.T) {
 		client := newRPCClient(t, serviceRPCAddr)
 		defer func() { _ = client.Close() }()
-		resp := &informerProto.WorkersList{}
-		require.NoError(t, client.Call("informer.GetWorkers", &informerProto.GetWorkersRequest{Plugin: service}, resp))
-		require.Len(t, resp.GetWorkers(), 20)
+		lst := struct {
+			Workers []process.State `json:"workers"`
+		}{}
+		require.NoError(t, client.Call("informer.Workers", service, &lst))
+		require.Len(t, lst.Workers, 20)
 	}
 }

@@ -28,7 +28,7 @@ func (r *rpc) loadProcesses(name string) ([]*Process, error) {
 	return v.([]*Process), nil
 }
 
-func (r *rpc) CreateService(in *serviceV1.Create, out *serviceV1.Response) error {
+func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 	r.p.logger.Debug("create service", "name", in.GetName(), "restart_sec", in.GetRestartSec(), "command", in.GetCommand(), "process number", in.GetProcessNum())
 
 	if in.GetProcessNum() == 0 {
@@ -133,8 +133,8 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 	return nil
 }
 
-// Deprecated: use GetStatuses to get correct info.
-func (r *rpc) GetStatus(in *serviceV1.Service, out *serviceV1.Status) error {
+// Deprecated: use Statuses to get correct info.
+func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 	r.p.logger.Debug("service status", "name", in.GetName())
 
 	r.mu.RLock()
@@ -160,7 +160,7 @@ func (r *rpc) GetStatus(in *serviceV1.Service, out *serviceV1.Status) error {
 	return nil
 }
 
-func (r *rpc) GetStatuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
+func (r *rpc) Statuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
 	r.p.logger.Debug("service status", "name", in.GetName())
 
 	r.mu.RLock()
@@ -200,7 +200,7 @@ func (r *rpc) GetStatuses(in *serviceV1.Service, out *serviceV1.Statuses) error 
 	return nil
 }
 
-func (r *rpc) ListServices(_ *serviceV1.Service, out *serviceV1.List) error {
+func (r *rpc) List(_ *serviceV1.Service, out *serviceV1.List) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
