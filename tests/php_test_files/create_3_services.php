@@ -6,7 +6,7 @@ use Spiral\Goridge\RPC\RPC;
 ini_set('display_errors', 'stderr');
 require __DIR__ . "/vendor/autoload.php";
 
-$rpc = RPC::create('tcp://127.0.0.1:6001');
+$rpc = RPC::create('tcp://127.0.0.1:6313');
 $manager = new Manager($rpc);
 
 

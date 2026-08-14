@@ -10,7 +10,6 @@ require (
 	github.com/roadrunner-server/endure/v2 v2.6.2
 	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.3
 	github.com/roadrunner-server/informer/v6 v6.0.0-beta.3.0.20260812194959-55c516b2a365
-	github.com/roadrunner-server/logger/v6 v6.0.0-beta.3
 	github.com/roadrunner-server/pool/v2 v2.0.0-beta.1
 	github.com/roadrunner-server/resetter/v6 v6.0.0-beta.4.0.20260812195002-d8956d0fde3c
 	github.com/roadrunner-server/rpc/v6 v6.0.0-beta.5

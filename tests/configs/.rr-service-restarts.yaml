@@ -1,18 +1,9 @@
 version: '3'
 
 service:
-  some_service_2:
-    command: "php_test_files/test_binary"
+  some_service_1:
+    command: "php php_test_files/hello.php"
     process_num: 1
-    remain_after_exit: false
-    restart_delay: 1s
-    exec_timeout: 2s
-
-logs:
-  level: error
-  mode: raw
-
-endure:
-  grace_period: 120s
-  print_graph: false
-  log_level: error
+    remain_after_exit: true
+    restart_sec: 1
+    exec_timeout: 1s

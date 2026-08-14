@@ -1,7 +1,7 @@
 version: '3'
 
 rpc:
-  listen: tcp://127.0.0.1:6001
+  listen: tcp://127.0.0.1:6313
 
 service:
   some_service_1:
@@ -10,8 +10,3 @@ service:
     exec_timeout: 20s # s,m,h (seconds, minutes, hours)
     remain_after_exit: false
     restart_sec: 1
-
-endure:
-  grace_period: 10s
-  print_graph: false
-  log_level: debug
