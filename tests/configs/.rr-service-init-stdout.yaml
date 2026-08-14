@@ -8,5 +8,5 @@ service:
     remain_after_exit: false
     restart_sec: 1
     env:
-      - "FOO": "BAR"
-      - "FOO2": "BAZ"
+      FOO: "BAR"
+      FOO2: "BAZ"

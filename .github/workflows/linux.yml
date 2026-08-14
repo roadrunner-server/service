@@ -63,21 +63,21 @@ jobs:
           echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
           ulimit -n 5000
 
+      - name: Create folders
+        run: |
+          mkdir ./tests/coverage-ci
+
       - name: Install Go dependencies
         run: go mod download
 
       - name: Run service unit tests with coverage
         run: |
-          mkdir ./tests/coverage-ci
-          go test -timeout 20m -v -race -cover -tags=debug -failfast -coverpkg=github.com/roadrunner-server/service/v6 -coverprofile=./tests/coverage-ci/service_u.out -covermode=atomic .
+          go test -timeout 20m -v -race -cover -tags=debug -coverpkg=./... -coverprofile=./tests/coverage-ci/service_u.out -covermode=atomic ./...
 
       - name: Run service e2e tests with coverage
         run: |
           cd tests
-          
-          chmod 777 php_test_files/test_binary
-          chmod +x php_test_files/test_binary
-          go test -timeout 20m -v -race -cover -tags=debug -failfast -coverpkg=github.com/roadrunner-server/service/v6 -coverprofile=./coverage-ci/service.out -covermode=atomic .
+          go test -timeout 20m -v -race -cover -tags=debug -coverpkg=github.com/roadrunner-server/service/v6/... -coverprofile=./coverage-ci/service.out -covermode=atomic .
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v7
