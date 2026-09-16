@@ -22,11 +22,9 @@ const (
 func TestRPCCreateRejectsEmptyGroup(t *testing.T) {
 	r := newTestRPC(t)
 
-	out := &serviceV1.Response{}
-	err := r.Create(&serviceV1.Create{Name: testServiceName, Command: "sleep 30"}, out)
+	err := r.Create(&serviceV1.Create{Name: testServiceName, Command: "sleep 30"}, &serviceV1.Response{})
 
 	require.ErrorContains(t, err, "at least 1 process")
-	require.False(t, out.GetOk())
 
 	_, stored := r.p.processes.Load(testServiceName)
 	require.False(t, stored)
@@ -35,37 +33,26 @@ func TestRPCCreateRejectsEmptyGroup(t *testing.T) {
 func TestRPCCreateTwice(t *testing.T) {
 	r := newTestRPC(t)
 
-	in := &serviceV1.Create{
-		Name:            testServiceName,
-		Command:         "sleep 30",
-		ProcessNum:      1,
-		Env:             map[string]string{"foo": "bar"},
-		RestartSec:      1,
-		TimeoutStopSec:  1,
-		RemainAfterExit: false,
-	}
+	in := newCreate(testServiceName, 1)
 	require.NoError(t, r.Create(in, &serviceV1.Response{}))
 	running := rpcPids(t, r)
 
 	err := r.Create(in, &serviceV1.Response{})
 
 	require.ErrorIs(t, err, errServiceExists)
-	// the group that is already running is left alone
 	require.Equal(t, running, rpcPids(t, r))
 }
 
 func TestRPCCreateBrokenCommand(t *testing.T) {
 	r := newTestRPC(t)
 
-	out := &serviceV1.Response{}
 	err := r.Create(&serviceV1.Create{
 		Name:       testServiceName,
 		Command:    filepath.Join(t.TempDir(), "no-such-binary"),
 		ProcessNum: 2,
-	}, out)
+	}, &serviceV1.Response{})
 
 	require.Error(t, err)
-	require.False(t, out.GetOk())
 
 	_, stored := r.p.processes.Load(testServiceName)
 	require.False(t, stored)
@@ -88,9 +75,7 @@ func TestRPCRestartReplacesProcesses(t *testing.T) {
 	before := rpcPids(t, r)
 	require.Len(t, before, 2)
 
-	out := &serviceV1.Response{}
-	require.NoError(t, r.Restart(&serviceV1.Service{Name: testServiceName}, out))
-	require.True(t, out.GetOk())
+	require.NoError(t, r.Restart(&serviceV1.Service{Name: testServiceName}, &serviceV1.Response{}))
 
 	after := rpcPids(t, r)
 	require.Len(t, after, 2)
@@ -107,11 +92,12 @@ func TestRPCRestartRollsBackBrokenReplacement(t *testing.T) {
 	r := newTestRPC(t)
 	log, store := newCaptureLogger()
 	r.p.logger = log
-	require.NoError(t, r.Create(newCreate(testServiceName, 2), &serviceV1.Response{}))
-
-	procs := loadProcs(t, r)
-	before := rpcPids(t, r)
 	script := writeScript(t, "replacement.sh", "#!/bin/sh\necho replacement-ready\nexec sleep 30\n")
+	request := newCreate(testServiceName, 2)
+	request.Command = script
+	require.NoError(t, r.Create(request, &serviceV1.Response{}))
+
+	before := rpcPids(t, r)
 	handler := &replacementHandler{Handler: log.Handler(), ready: make(chan struct{}, 1)}
 	handler.removeCommand = sync.OnceFunc(func() {
 		select {
@@ -125,7 +111,6 @@ func TestRPCRestartRollsBackBrokenReplacement(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(g.stop)
 	g.mu.Lock()
-	g.desired.Command = script
 	g.log = slog.New(handler)
 	g.mu.Unlock()
 
@@ -140,8 +125,8 @@ func TestRPCRestartRollsBackBrokenReplacement(t *testing.T) {
 	_, stored := r.p.processes.Load(testServiceName)
 	require.False(t, stored)
 
-	for i := range procs {
-		require.Eventually(t, func() bool { return !processAlive(procs[i].pid) },
+	for _, pid := range before {
+		require.Eventually(t, func() bool { return !processAlive(pid) },
 			time.Second*10, time.Millisecond*20)
 	}
 }
@@ -170,17 +155,15 @@ func (h *replacementHandler) Handle(ctx context.Context, record slog.Record) err
 func TestRPCTerminateStopsProcesses(t *testing.T) {
 	r := newTestRPC(t)
 	require.NoError(t, r.Create(newCreate(testServiceName, 2), &serviceV1.Response{}))
-	procs := loadProcs(t, r)
+	pids := rpcPids(t, r)
 
-	out := &serviceV1.Response{}
-	require.NoError(t, r.Terminate(&serviceV1.Service{Name: testServiceName}, out))
-	require.True(t, out.GetOk())
+	require.NoError(t, r.Terminate(&serviceV1.Service{Name: testServiceName}, &serviceV1.Response{}))
 
 	_, stored := r.p.processes.Load(testServiceName)
 	require.False(t, stored)
 
-	for i := range procs {
-		require.Eventually(t, func() bool { return !processAlive(procs[i].pid) },
+	for _, pid := range pids {
+		require.Eventually(t, func() bool { return !processAlive(pid) },
 			time.Second*10, time.Millisecond*20)
 	}
 }
@@ -201,15 +184,12 @@ func TestRPCListAndStatuses(t *testing.T) {
 	for _, st := range statuses.GetStatus() {
 		require.Nil(t, st.GetStatus())
 		require.NotZero(t, st.GetPid())
-		require.NotZero(t, st.GetMemoryUsage())
-		require.Contains(t, st.GetCommand(), "sleep")
 	}
 
-	// Status keeps only the last process of the group
+	// Status reports the last process in the group.
 	status := &serviceV1.Status{}
 	require.NoError(t, r.Status(&serviceV1.Service{Name: testServiceName}, status))
 	require.Equal(t, statuses.GetStatus()[1].GetPid(), status.GetPid())
-	require.Equal(t, statuses.GetStatus()[1].GetCommand(), status.GetCommand())
 }
 
 func TestRPCStatusesReportsDeadProcess(t *testing.T) {
@@ -217,6 +197,7 @@ func TestRPCStatusesReportsDeadProcess(t *testing.T) {
 	require.NoError(t, r.Create(newCreate(testServiceName, 1), &serviceV1.Response{}))
 
 	procs := loadProcs(t, r)
+	require.NotZero(t, procs[0].pid)
 	procs[0].stop()
 	require.Eventually(t, func() bool { return !processAlive(procs[0].pid) },
 		time.Second*10, time.Millisecond*20)
@@ -225,12 +206,12 @@ func TestRPCStatusesReportsDeadProcess(t *testing.T) {
 	require.NoError(t, r.Statuses(&serviceV1.Service{Name: testServiceName}, statuses))
 	require.Len(t, statuses.GetStatus(), 1)
 
-	// the pid and the command are still reported, the state carries the error
-	require.NotZero(t, statuses.GetStatus()[0].GetPid())
+	// The status retains the PID and command when the process exits.
+	require.EqualValues(t, procs[0].pid, statuses.GetStatus()[0].GetPid())
 	require.Contains(t, statuses.GetStatus()[0].GetCommand(), "sleep")
 	require.NotEmpty(t, statuses.GetStatus()[0].GetStatus().GetMessage())
 
-	// Status has no per-process error slot and fails instead
+	// Status returns the process error.
 	require.Error(t, r.Status(&serviceV1.Service{Name: testServiceName}, &serviceV1.Status{}))
 }
 

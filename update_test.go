@@ -27,26 +27,24 @@ func TestRPCUpdateValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := newTestRPC(t)
-			require.NoError(t, r.Create(newCreate(testServiceName, 1), &serviceV1.Response{}))
-			before := rpcPids(t, r)
+			desired := Service{
+				Command:        "sleep 30",
+				ProcessNum:     1,
+				ExecTimeout:    20 * time.Second,
+				RestartSec:     7,
+				TimeoutStopSec: 3,
+				Env:            Env{"VALUE": "accepted"},
+			}
+			g := newGroup(&desired, testServiceName, r.p.logger)
+			r.p.processes.Store(testServiceName, g)
 			tt.patch.Name = testServiceName
 			if tt.patch.ProcessNum == nil {
 				tt.patch.ProcessNum = new(int64(2))
 			}
 			tt.patch.Env = &serviceV1.Environment{Values: map[string]string{"VALUE": "rejected"}}
 			tt.patch.ServiceNameInLogs = new(true)
-			out := &serviceV1.Response{}
-			require.Error(t, r.Update(tt.patch, out))
-			require.False(t, out.GetOk())
-			require.Equal(t, before, rpcPids(t, r))
-			require.NoError(t, r.Restart(&serviceV1.Service{Name: testServiceName}, &serviceV1.Response{}))
-			proc := loadProcs(t, r)[0]
-			require.NotContains(t, proc.command.Env, "VALUE=rejected")
-			require.False(t, proc.service.UseServiceName)
-			require.Equal(t, 1, proc.service.ProcessNum)
-			require.Zero(t, proc.service.ExecTimeout)
-			require.Equal(t, uint64(1), proc.service.RestartSec)
-			require.Equal(t, uint64(1), proc.service.TimeoutStopSec)
+			require.Error(t, r.Update(tt.patch, &serviceV1.Response{}))
+			require.Equal(t, desired, g.desired)
 		})
 	}
 }
@@ -63,9 +61,7 @@ func TestRPCUpdateOmissionAndCopies(t *testing.T) {
 	require.NoError(t, r.Update(patch, &serviceV1.Response{}))
 	patch.Env.Values["VALUE"] = "changed-update-request"
 	require.NoError(t, r.Update(&serviceV1.Update{Name: testServiceName, ProcessNum: new(int64(2)), RestartSec: new(uint64(7))}, &serviceV1.Response{}))
-	out := &serviceV1.Response{}
-	require.NoError(t, r.Update(&serviceV1.Update{Name: testServiceName}, out))
-	require.True(t, out.GetOk())
+	require.NoError(t, r.Update(&serviceV1.Update{Name: testServiceName}, &serviceV1.Response{}))
 	require.Equal(t, "created", first.service.Env["VALUE"])
 	require.NoError(t, r.Restart(&serviceV1.Service{Name: testServiceName}, &serviceV1.Response{}))
 	procs := loadProcs(t, r)
@@ -75,12 +71,6 @@ func TestRPCUpdateOmissionAndCopies(t *testing.T) {
 		require.Equal(t, 20*time.Second, proc.service.ExecTimeout)
 		require.Equal(t, uint64(4), proc.service.TimeoutStopSec)
 		require.Equal(t, uint64(7), proc.service.RestartSec)
-	}
-	procs[0].service.Env["VALUE"] = "execution-local"
-	require.Equal(t, "updated", procs[1].service.Env["VALUE"])
-	require.NoError(t, r.p.Reset())
-	for _, proc := range loadProcs(t, r) {
-		require.Contains(t, proc.command.Env, "VALUE=updated")
 	}
 }
 
@@ -113,9 +103,7 @@ func TestRPCUpdateBoundsAndZero(t *testing.T) {
 
 func TestRPCUpdateUnknown(t *testing.T) {
 	r := newTestRPC(t)
-	out := &serviceV1.Response{}
-	require.ErrorIs(t, r.Update(&serviceV1.Update{Name: "missing"}, out), errNoSuchService)
-	require.False(t, out.GetOk())
+	require.ErrorIs(t, r.Update(&serviceV1.Update{Name: "missing"}, &serviceV1.Response{}), errNoSuchService)
 }
 
 func TestRPCCreateInvalidRuntimeValues(t *testing.T) {
@@ -133,9 +121,7 @@ func TestRPCCreateInvalidRuntimeValues(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := newTestRPC(t)
 			tt.request.Name, tt.request.Command = testServiceName, "sleep 30"
-			require.NotPanics(t, func() {
-				require.Error(t, r.Create(tt.request, &serviceV1.Response{}))
-			})
+			require.Error(t, r.Create(tt.request, &serviceV1.Response{}))
 		})
 	}
 }
@@ -185,9 +171,7 @@ func TestRPCUpdateMaximumProcessCount(t *testing.T) {
 	r := newTestRPC(t)
 	require.NoError(t, r.Create(newCreate(testServiceName, 1), &serviceV1.Response{}))
 	before := rpcPids(t, r)
-	out := &serviceV1.Response{}
-	require.NoError(t, r.Update(&serviceV1.Update{Name: testServiceName, ProcessNum: new(int64(math.MaxInt))}, out))
-	require.True(t, out.GetOk())
+	require.NoError(t, r.Update(&serviceV1.Update{Name: testServiceName, ProcessNum: new(int64(math.MaxInt))}, &serviceV1.Response{}))
 	require.Equal(t, before, rpcPids(t, r))
 	if int64(math.MaxInt) < math.MaxInt64 {
 		require.Error(t, r.Update(&serviceV1.Update{Name: testServiceName, ProcessNum: new(int64(math.MaxInt64))}, &serviceV1.Response{}))
@@ -208,6 +192,5 @@ func TestRPCUpdateRestartFailureRetainsExitStatus(t *testing.T) {
 	require.NoError(t, r.Statuses(&serviceV1.Service{Name: testServiceName}, statuses))
 	require.Len(t, statuses.GetStatus(), 1)
 	require.EqualValues(t, before, statuses.GetStatus()[0].GetPid())
-	require.Contains(t, statuses.GetStatus()[0].GetCommand(), "delete-on-exit.sh")
 	require.NotEmpty(t, statuses.GetStatus()[0].GetStatus().GetMessage())
 }

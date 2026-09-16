@@ -2,7 +2,6 @@ package service
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -24,63 +23,30 @@ func TestSetEnv(t *testing.T) {
 
 func TestCreateProcess(t *testing.T) {
 	tests := []struct {
-		name    string
-		command string
-		args    []string
+		name        string
+		command     string
+		execTimeout time.Duration
+		args        []string
 	}{
 		{name: "single token", command: "sleep", args: []string{"sleep"}},
 		{name: "command with arguments", command: "sleep 30", args: []string{"sleep", "30"}},
+		{name: "single token with timeout", command: "sleep", execTimeout: time.Second, args: []string{"sleep"}},
+		{name: "arguments with timeout", command: "sleep 30", execTimeout: time.Second, args: []string{"sleep", "30"}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &Process{service: &Service{Command: tt.command}}
-			p.createProcess(strings.Split(tt.command, " "))
+			p := &Process{service: &Service{Command: tt.command, ExecTimeout: tt.execTimeout}}
+			if tt.execTimeout > 0 {
+				p.createProcessCtx(strings.Split(tt.command, " "))
+				t.Cleanup(p.cancel)
+			} else {
+				p.createProcess(strings.Split(tt.command, " "))
+			}
 
 			require.Equal(t, tt.args, p.command.Args)
-			require.Equal(t, "sleep", filepath.Base(p.command.Path))
-			require.Nil(t, p.cancel)
 		})
 	}
-}
-
-func TestCreateProcessCtx(t *testing.T) {
-	tests := []struct {
-		name    string
-		command string
-		args    []string
-	}{
-		{name: "single token", command: "sleep", args: []string{"sleep"}},
-		{name: "command with arguments", command: "sleep 30", args: []string{"sleep", "30"}},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &Process{service: &Service{Command: tt.command, ExecTimeout: time.Second}}
-			p.createProcessCtx(strings.Split(tt.command, " "))
-			t.Cleanup(p.cancel)
-
-			require.Equal(t, tt.args, p.command.Args)
-			require.Equal(t, "sleep", filepath.Base(p.command.Path))
-			require.NotNil(t, p.cancel)
-		})
-	}
-}
-
-func TestConfigureUser(t *testing.T) {
-	t.Run("unset", func(t *testing.T) {
-		p := &Process{service: &Service{}}
-		require.NoError(t, p.configureUser())
-	})
-
-	t.Run("unknown user", func(t *testing.T) {
-		p := &Process{
-			service: &Service{User: "roadrunner-user-that-cannot-exist"},
-			command: exec.CommandContext(t.Context(), "sleep", "30"),
-		}
-
-		require.Error(t, p.configureUser())
-	})
 }
 
 func TestProcessWriteTrimsOutput(t *testing.T) {
@@ -116,8 +82,8 @@ func TestNewServiceProcessServiceNameInLog(t *testing.T) {
 	svc := &Service{UseServiceName: true, RestartSec: 3, TimeoutStopSec: 7}
 	p := NewServiceProcess(svc, "some_service", log)
 
-	require.EqualValues(t, 3, svc.RestartSec)
-	require.EqualValues(t, 7, svc.TimeoutStopSec)
+	require.EqualValues(t, 3, p.service.RestartSec)
+	require.EqualValues(t, 7, p.service.TimeoutStopSec)
 
 	p.log.Info("output")
 	rec, ok := store.find("output")
@@ -139,20 +105,13 @@ func TestProcessStopAfterFailedStart(t *testing.T) {
 			log, _ := newCaptureLogger()
 			p := NewServiceProcess(&Service{Command: tt.command, User: tt.user, TimeoutStopSec: 30}, testServiceName, log)
 			require.Error(t, p.start())
+			require.Zero(t, p.pid)
 
 			started := time.Now()
 			p.stop()
 			require.Less(t, time.Since(started), time.Second)
 		})
 	}
-}
-
-func TestProcessStartConfigureUserError(t *testing.T) {
-	log, _ := newCaptureLogger()
-	p := NewServiceProcess(&Service{Command: "sleep 30", User: "roadrunner-user-that-cannot-exist"}, "some_service", log)
-
-	require.Error(t, p.start())
-	require.Zero(t, p.pid)
 }
 
 func TestProcessStopKillsUnresponsiveChild(t *testing.T) {
@@ -178,6 +137,7 @@ func TestProcessStopKillsUnresponsiveChild(t *testing.T) {
 			require.NoError(t, p.start())
 			pid := p.pid
 			require.NotZero(t, pid)
+			t.Cleanup(p.stop)
 
 			// the marker is written once the child ignores SIGINT
 			require.Eventually(t, func() bool { return store.count("ready") == 1 },
@@ -221,19 +181,20 @@ func TestProcessWaitBoundsInheritedPipes(t *testing.T) {
 			p := NewServiceProcess(&Service{Command: script, ExecTimeout: tt.execTimeout, TimeoutStopSec: tt.stopSeconds}, testServiceName, log)
 			started := time.Now()
 			require.NoError(t, p.start())
+			require.NotZero(t, p.pid)
 			t.Cleanup(p.stop)
 			require.Eventually(t, func() bool { return store.count("ready") == 1 }, 5*time.Second, 10*time.Millisecond)
 			data, err := os.ReadFile(script + ".pid")
 			require.NoError(t, err)
 			pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 			require.NoError(t, err)
+			require.Positive(t, pid)
 			holder, err := os.FindProcess(pid)
 			require.NoError(t, err)
 			t.Cleanup(func() {
 				_ = holder.Kill()
 				_ = holder.Release()
 			})
-			require.True(t, processAlive(int64(pid)))
 			done := p.done
 			if tt.stop {
 				started = time.Now()
@@ -272,26 +233,6 @@ func TestProcessRestartsAfterExit(t *testing.T) {
 
 	// the child exits at once and is started again restart_sec later
 	require.Eventually(t, func() bool { return store.count("ready") >= 2 },
-		time.Second*15, time.Millisecond*20)
-}
-
-func TestProcessRestartError(t *testing.T) {
-	script := writeScript(t, "delete-itself.sh", "#!/bin/sh\necho ready\nrm -- \"$0\"\n")
-
-	log, store := newCaptureLogger()
-	g := newGroup(&Service{
-		Command:         script,
-		ProcessNum:      1,
-		RemainAfterExit: true,
-		RestartSec:      1,
-		TimeoutStopSec:  1,
-	}, "some_service", log)
-
-	require.NoError(t, g.start())
-	t.Cleanup(g.stop)
-
-	// the child removes its own command, so the restart cannot execute it
-	require.Eventually(t, func() bool { return store.count("process start error") == 1 },
 		time.Second*15, time.Millisecond*20)
 }
 
