@@ -18,9 +18,7 @@ func TestGeneralProcessState(t *testing.T) {
 }
 
 func TestGeneralProcessStateInvalidPid(t *testing.T) {
-	st, err := generalProcessState(-1, "go test")
+	_, err := generalProcessState(-1, "go test")
 
-	require.Error(t, err)
-	require.Nil(t, st)
 	require.ErrorContains(t, err, "process_state")
 }

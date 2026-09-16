@@ -3,7 +3,6 @@ package service
 import (
 	stderr "errors"
 	"fmt"
-	"sync"
 	"time"
 
 	shared "github.com/roadrunner-server/api-go/v6/common/v1"
@@ -13,63 +12,75 @@ import (
 var (
 	errNoSuchService = stderr.New("no such service")
 	errServiceExists = stderr.New("service already exists")
+	errPluginStopped = stderr.New("service plugin is stopped")
 )
 
 type rpc struct {
-	mu sync.RWMutex
-	p  *Plugin
+	p *Plugin
 }
 
-func (r *rpc) loadProcesses(name string) ([]*Process, error) {
+func (r *rpc) loadGroup(name string) (*group, error) {
 	v, ok := r.p.processes.Load(name)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", errNoSuchService, name)
 	}
-	return v.([]*Process), nil
+	return v.(*group), nil
+}
+
+func (r *rpc) loadProcesses(name string) ([]*Process, error) {
+	g, err := r.loadGroup(name)
+	if err != nil {
+		return nil, err
+	}
+	return g.snapshot(), nil
 }
 
 func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 	r.p.logger.Debug("create service", "name", in.GetName(), "restart_sec", in.GetRestartSec(), "command", in.GetCommand(), "process number", in.GetProcessNum())
 
-	if in.GetProcessNum() == 0 {
-		return fmt.Errorf("the service with %s name should have at least 1 process", in.GetName())
+	if err := validateRuntimeValues(&in.ProcessNum, &in.ExecTimeout, &in.RestartSec, &in.TimeoutStopSec); err != nil {
+		return err
 	}
 
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.p.mu.Lock()
+	defer r.p.mu.Unlock()
+	if r.p.stopped {
+		return errPluginStopped
+	}
 
 	if _, ok := r.p.processes.Load(in.GetName()); ok {
 		return fmt.Errorf("%w: %s", errServiceExists, in.GetName())
 	}
 
-	procs := make([]*Process, 0, in.GetProcessNum())
-	for range int(in.GetProcessNum()) {
-		proc := NewServiceProcess(&Service{
-			Command:         in.GetCommand(),
-			ProcessNum:      int(in.GetProcessNum()),
-			ExecTimeout:     time.Second * time.Duration(in.GetExecTimeout()),
-			RemainAfterExit: in.GetRemainAfterExit(),
-			RestartSec:      in.GetRestartSec(),
-			UseServiceName:  in.GetServiceNameInLogs(),
-			TimeoutStopSec:  in.GetTimeoutStopSec(),
-			Env:             in.GetEnv(),
-		}, in.GetName(), r.p.logger)
-
-		if err := proc.start(); err != nil {
-			// if some process from the group failed -> deallocate the whole group
-			if len(procs) > 0 {
-				r.p.logger.Warn("stopping already allocated processes")
-				for i := range procs {
-					procs[i].stop()
-				}
-			}
-			return err
-		}
-
-		procs = append(procs, proc)
+	g := newGroup(&Service{
+		Command:         in.GetCommand(),
+		ProcessNum:      int(in.GetProcessNum()),
+		ExecTimeout:     time.Second * time.Duration(in.GetExecTimeout()),
+		RemainAfterExit: in.GetRemainAfterExit(),
+		RestartSec:      in.GetRestartSec(),
+		UseServiceName:  in.GetServiceNameInLogs(),
+		TimeoutStopSec:  in.GetTimeoutStopSec(),
+		Env:             in.GetEnv(),
+	}, in.GetName(), r.p.logger)
+	if err := g.start(); err != nil {
+		g.stop()
+		return err
 	}
 
-	r.p.processes.Store(in.GetName(), procs)
+	r.p.processes.Store(in.GetName(), g)
+	out.Ok = true
+	return nil
+}
+
+// Update accepts desired configuration for subsequent executions.
+func (r *rpc) Update(in *serviceV1.Update, out *serviceV1.Response) error {
+	g, err := r.loadGroup(in.GetName())
+	if err != nil {
+		return err
+	}
+	if err = g.update(in); err != nil {
+		return err
+	}
 	out.Ok = true
 	return nil
 }
@@ -77,16 +88,15 @@ func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 func (r *rpc) Terminate(in *serviceV1.Service, out *serviceV1.Response) error {
 	r.p.logger.Debug("terminate service", "name", in.GetName())
 
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.p.mu.Lock()
+	defer r.p.mu.Unlock()
 
-	v, ok := r.p.processes.LoadAndDelete(in.GetName())
-	if !ok {
-		return fmt.Errorf("%w: %s", errNoSuchService, in.GetName())
+	g, err := r.loadGroup(in.GetName())
+	if err != nil {
+		return err
 	}
-	for _, proc := range v.([]*Process) {
-		proc.stop()
-	}
+	g.stop()
+	r.p.processes.Delete(in.GetName())
 
 	out.Ok = true
 	return nil
@@ -96,39 +106,20 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 	name := in.GetName()
 	r.p.logger.Debug("restart service", "name", name)
 
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.p.mu.Lock()
+	defer r.p.mu.Unlock()
 
-	procs, err := r.loadProcesses(name)
+	g, err := r.loadGroup(name)
 	if err != nil {
 		return err
 	}
 
-	// Stop every old process up front; we already hold the write lock, and
-	// nothing else writes to the same map entry while we rebuild.
-	for i := range procs {
-		procs[i].stop()
+	if err = g.restart(); err != nil {
+		g.stop()
+		r.p.processes.Delete(name)
+		return err
 	}
 
-	newProcs := make([]*Process, 0, len(procs))
-	for i := range procs {
-		svc := &Service{}
-		*svc = *(procs[i]).service
-
-		newProc := NewServiceProcess(svc, name, r.p.logger)
-		if err := newProc.start(); err != nil {
-			// roll back any already-started replacements so we don't leak processes
-			for j := range newProcs {
-				newProcs[j].stop()
-			}
-			r.p.processes.Delete(name)
-			return err
-		}
-
-		newProcs = append(newProcs, newProc)
-	}
-
-	r.p.processes.Store(name, newProcs)
 	out.Ok = true
 	return nil
 }
@@ -136,9 +127,6 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 // Deprecated: use Statuses to get correct info.
 func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 	r.p.logger.Debug("service status", "name", in.GetName())
-
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 
 	procs, err := r.loadProcesses(in.GetName())
 	if err != nil {
@@ -162,9 +150,6 @@ func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 
 func (r *rpc) Statuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
 	r.p.logger.Debug("service status", "name", in.GetName())
-
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 
 	procs, err := r.loadProcesses(in.GetName())
 	if err != nil {
@@ -201,9 +186,6 @@ func (r *rpc) Statuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
 }
 
 func (r *rpc) List(_ *serviceV1.Service, out *serviceV1.List) error {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
 	r.p.processes.Range(func(key, _ any) bool {
 		r.p.logger.Debug("services list", "service", key.(string))
 		out.Services = append(out.Services, key.(string))

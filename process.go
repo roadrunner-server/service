@@ -7,18 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
-	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/roadrunner-server/pool/v2/process"
 )
 
-// Process structure contains information about process, restart information, log, errors, etc
+// Process holds one execution and its configuration snapshot.
 type Process struct {
-	sync.Mutex
-	// command to execute
 	command *exec.Cmd
 	pid     int64
 
@@ -27,31 +23,22 @@ type Process struct {
 	service *Service
 	cancel  context.CancelFunc
 
-	// process start time
-	stopped  atomic.Bool
-	sigintCh chan struct{}
+	done   chan struct{}
+	onExit func(*Process)
 }
 
 // NewServiceProcess constructs service process structure
 func NewServiceProcess(service *Service, name string, l *slog.Logger) *Process {
+	snapshot := service.clone()
 	log := l
-	if service.UseServiceName {
+	if snapshot.UseServiceName {
 		log = l.With("service", name)
 	}
 
-	// set defaults
-	if service.RestartSec == 0 {
-		service.RestartSec = 30
-	}
-
-	if service.TimeoutStopSec == 0 {
-		service.TimeoutStopSec = 5
-	}
-
 	return &Process{
-		service:  service,
-		log:      log,
-		sigintCh: make(chan struct{}, 1),
+		service: &snapshot,
+		log:     log,
+		done:    make(chan struct{}),
 	}
 }
 
@@ -62,19 +49,18 @@ func (p *Process) Write(b []byte) (int, error) {
 }
 
 func (p *Process) start() error {
-	p.Lock()
-	defer p.Unlock()
+	cmdArgs := strings.Split(p.service.Command, " ")
 
-	// cmdArgs contain command arguments if the command in form of: php <command> or ls <command> -i -b
-	cmdArgs := make([]string, 0, 5)
-	cmdArgs = append(cmdArgs, strings.Split(p.service.Command, " ")...)
-
-	// crate fat-process here
 	if p.service.ExecTimeout > 0 {
 		p.createProcessCtx(cmdArgs)
 	} else {
 		p.createProcess(cmdArgs)
 	}
+	defer func() {
+		if p.pid == 0 && p.cancel != nil {
+			p.cancel()
+		}
+	}()
 
 	process.IsolateProcess(p.command)
 
@@ -87,6 +73,7 @@ func (p *Process) start() error {
 	// redirect stderr and stdout into the Write function of the process.go
 	p.command.Stderr = p
 	p.command.Stdout = p
+	p.command.WaitDelay = time.Second * time.Duration(p.service.TimeoutStopSec) //nolint:gosec
 
 	// non-blocking process start
 	err = p.command.Start()
@@ -94,7 +81,6 @@ func (p *Process) start() error {
 		return err
 	}
 
-	// save start time
 	p.pid = int64(p.command.Process.Pid)
 
 	// start process waiting routine
@@ -136,69 +122,40 @@ func (p *Process) configureUser() error {
 	return nil
 }
 
-// wait process for exit
+// wait completes before the execution's completion channel closes.
 func (p *Process) wait() {
-	// Wait error doesn't matter here
+	defer close(p.done)
 	err := p.command.Wait()
 	if err != nil {
 		p.log.Error("wait", "error", err)
 	}
 
-	// select is optional here
-	select {
-	case p.sigintCh <- struct{}{}:
-	default:
-		break
+	if p.cancel != nil {
+		p.cancel()
 	}
-
-	// wait for restart delay
-	if p.service.RemainAfterExit {
-		if p.stopped.Load() {
-			return
-		}
-		// wait for the delay
-		time.Sleep(time.Second * time.Duration(p.service.RestartSec)) //nolint:gosec
-		// and start command again
-		err = p.start()
-		if err != nil {
-			p.log.Error("process start error", "error", err)
-			return
-		}
+	if p.onExit != nil {
+		p.onExit(p)
 	}
 }
 
-// stop can be only sent by endure when plugin stopped
+// stop waits for child completion, including forced termination.
 func (p *Process) stop() {
-	p.stopped.Store(true)
-	p.Lock()
-	defer p.Unlock()
-
-	if p.command == nil || p.command.Process == nil {
+	if p.command.Process == nil {
 		return
 	}
-
-	// send SIGINT and wait
-	_ = p.command.Process.Signal(syscall.SIGINT)
-
-	ta := time.NewTimer(time.Second * time.Duration(p.service.TimeoutStopSec)) //nolint:gosec
 	select {
-	case <-ta.C:
-		// canceling context will raise SIGKILL
-		if p.cancel != nil {
-			p.cancel()
-		} else {
-			_ = p.command.Process.Signal(syscall.SIGKILL)
-		}
-
-		ta.Stop()
-		select {
-		case <-p.sigintCh:
-		default:
-			break
-		}
-	case <-p.sigintCh:
-		ta.Stop()
+	case <-p.done:
 		return
+	default:
+	}
+	_ = p.command.Process.Signal(syscall.SIGINT)
+	timer := time.NewTimer(time.Second * time.Duration(p.service.TimeoutStopSec)) //nolint:gosec
+	defer timer.Stop()
+	select {
+	case <-p.done:
+	case <-timer.C:
+		_ = p.command.Process.Kill()
+		<-p.done
 	}
 }
 

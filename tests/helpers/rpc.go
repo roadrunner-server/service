@@ -44,6 +44,14 @@ func Create(t *testing.T, c *rpc.Client, in *serviceV1.Create) {
 	require.True(t, out.GetOk())
 }
 
+// Update applies a service configuration patch.
+func Update(t *testing.T, c *rpc.Client, in *serviceV1.Update) {
+	t.Helper()
+	out := &serviceV1.Response{}
+	require.NoError(t, c.Call("service.Update", in, out))
+	require.True(t, out.GetOk())
+}
+
 // Terminate stops the named service group and drops it from the plugin.
 func Terminate(t *testing.T, c *rpc.Client, name string) {
 	t.Helper()
