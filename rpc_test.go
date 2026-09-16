@@ -2,7 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
+	"log/slog"
+	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -101,14 +105,37 @@ func TestRPCRestartReplacesProcesses(t *testing.T) {
 
 func TestRPCRestartRollsBackBrokenReplacement(t *testing.T) {
 	r := newTestRPC(t)
+	log, store := newCaptureLogger()
+	r.p.logger = log
 	require.NoError(t, r.Create(newCreate(testServiceName, 2), &serviceV1.Response{}))
 
-	// the replacements are built from the stored services, the second of which
-	// now points at something that cannot be executed
 	procs := loadProcs(t, r)
-	procs[1].service.Command = filepath.Join(t.TempDir(), "no-such-binary")
+	before := rpcPids(t, r)
+	script := writeScript(t, "replacement.sh", "#!/bin/sh\necho replacement-ready\nexec sleep 30\n")
+	handler := &replacementHandler{Handler: log.Handler(), ready: make(chan struct{}, 1)}
+	handler.removeCommand = sync.OnceFunc(func() {
+		select {
+		case <-handler.ready:
+			handler.err = os.Remove(script)
+		case <-time.After(5 * time.Second):
+			handler.err = errors.New("replacement did not report readiness")
+		}
+	})
+	g, err := r.loadGroup(testServiceName)
+	require.NoError(t, err)
+	t.Cleanup(g.stop)
+	g.mu.Lock()
+	g.desired.Command = script
+	g.log = slog.New(handler)
+	g.mu.Unlock()
 
 	require.Error(t, r.Restart(&serviceV1.Service{Name: testServiceName}, &serviceV1.Response{}))
+	require.NoError(t, handler.err)
+	require.Equal(t, 3, store.count("service was started"), "two original children and one replacement must start")
+	replacement := g.snapshot()[0]
+	require.NotZero(t, replacement.pid)
+	require.NotContains(t, before, replacement.pid)
+	require.False(t, processAlive(replacement.pid), "the partial replacement must be reaped")
 
 	_, stored := r.p.processes.Load(testServiceName)
 	require.False(t, stored)
@@ -117,6 +144,27 @@ func TestRPCRestartRollsBackBrokenReplacement(t *testing.T) {
 		require.Eventually(t, func() bool { return !processAlive(procs[i].pid) },
 			time.Second*10, time.Millisecond*20)
 	}
+}
+
+// replacementHandler removes the command after its first replacement reports readiness.
+type replacementHandler struct {
+	slog.Handler
+	ready         chan struct{}
+	removeCommand func()
+	err           error
+}
+
+func (h *replacementHandler) Handle(ctx context.Context, record slog.Record) error {
+	if record.Message == "replacement-ready" {
+		select {
+		case h.ready <- struct{}{}:
+		default:
+		}
+	}
+	if record.Message == "service was started" {
+		h.removeCommand()
+	}
+	return h.Handler.Handle(ctx, record)
 }
 
 func TestRPCTerminateStopsProcesses(t *testing.T) {
@@ -216,7 +264,7 @@ func loadProcs(t *testing.T, r *rpc) []*Process {
 	v, ok := r.p.processes.Load(testServiceName)
 	require.True(t, ok)
 
-	return v.([]*Process)
+	return v.(*group).snapshot()
 }
 
 // rpcPids returns the pids of the processes stored under the test service name.

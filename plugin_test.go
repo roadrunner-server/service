@@ -91,7 +91,7 @@ func TestPluginServeAndStop(t *testing.T) {
 	})
 
 	errCh := p.Serve()
-	requireWorkers(t, p, 2)
+	require.Len(t, p.Workers(), 2)
 	require.Empty(t, errCh)
 
 	for _, st := range p.Workers() {
@@ -117,8 +117,8 @@ func TestPluginServeReportsStartError(t *testing.T) {
 	select {
 	case err := <-errCh:
 		require.Error(t, err)
-	case <-time.After(time.Second * 10):
-		require.Fail(t, "the start error was not pushed to the error channel")
+	default:
+		t.Fatal("Serve returned before reporting the start error")
 	}
 
 	// the process was stored before it was started, but it has no pid
@@ -156,7 +156,10 @@ func TestPluginResetLogsFailedRestart(t *testing.T) {
 	// something that cannot be executed
 	v, ok := p.processes.Load("some_service")
 	require.True(t, ok)
-	v.([]*Process)[0].service.Command = filepath.Join(t.TempDir(), "no-such-binary")
+	g := v.(*group)
+	g.mu.Lock()
+	g.desired.Command = filepath.Join(t.TempDir(), "no-such-binary")
+	g.mu.Unlock()
 
 	require.NoError(t, p.Reset())
 

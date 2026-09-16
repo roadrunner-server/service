@@ -5,7 +5,7 @@ go 1.27
 toolchain go1.27.1
 
 require (
-	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.14
+	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.15
 	github.com/roadrunner-server/config/v6 v6.0.0-beta.4
 	github.com/roadrunner-server/endure/v2 v2.6.2
 	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.3
@@ -14,6 +14,7 @@ require (
 	github.com/roadrunner-server/resetter/v6 v6.0.0-beta.6
 	github.com/roadrunner-server/rpc/v6 v6.0.0-beta.6
 	github.com/roadrunner-server/service/v6 v6.0.0
+	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/stretchr/testify v1.12.1
 )
 
@@ -32,7 +33,6 @@ require (
 	github.com/roadrunner-server/errors v1.5.0 // indirect
 	github.com/roadrunner-server/tcplisten v1.6.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
@@ -44,7 +44,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.28.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
