@@ -1,7 +1,9 @@
 package service
 
 import (
+	"cmp"
 	"log/slog"
+	"maps"
 	"slices"
 	"sync"
 	"time"
@@ -166,41 +168,33 @@ func (g *group) restart() error {
 }
 
 func (g *group) update(in *serviceV1.Update) error {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	count, execution := int64(g.desired.ProcessNum), int64(g.desired.ExecTimeout/time.Second)
-	restart, stop := g.desired.RestartSec, g.desired.TimeoutStopSec
-	if in.ProcessNum != nil {
-		count = *in.ProcessNum
-	}
-	if in.ExecTimeout != nil {
-		execution = *in.ExecTimeout
-	}
-	if in.RestartSec != nil {
-		restart = *in.RestartSec
-	}
-	if in.TimeoutStopSec != nil {
-		stop = *in.TimeoutStopSec
-	}
-	if err := validateRuntimeValues(count, execution, restart, stop); err != nil {
+	if err := validateRuntimeValues(in.ProcessNum, in.ExecTimeout, in.RestartSec, in.TimeoutStopSec); err != nil {
 		return err
 	}
-	next := g.desired
-	next.ProcessNum = int(count)
-	if in.ExecTimeout != nil {
-		next.ExecTimeout = time.Duration(execution) * time.Second
+
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if in.ProcessNum != nil {
+		g.desired.ProcessNum = int(*in.ProcessNum)
 	}
-	next.RestartSec, next.TimeoutStopSec = restart, stop
+	if in.ExecTimeout != nil {
+		g.desired.ExecTimeout = time.Duration(*in.ExecTimeout) * time.Second
+	}
+	if in.RestartSec != nil {
+		g.desired.RestartSec = cmp.Or(*in.RestartSec, 30)
+	}
+	if in.TimeoutStopSec != nil {
+		g.desired.TimeoutStopSec = cmp.Or(*in.TimeoutStopSec, 5)
+	}
 	if in.RemainAfterExit != nil {
-		next.RemainAfterExit = *in.RemainAfterExit
+		g.desired.RemainAfterExit = *in.RemainAfterExit
 	}
 	if in.ServiceNameInLogs != nil {
-		next.UseServiceName = *in.ServiceNameInLogs
+		g.desired.UseServiceName = *in.ServiceNameInLogs
 	}
 	if in.Env != nil {
-		next.Env = in.Env.Values
+		g.desired.Env = maps.Clone(in.Env.Values)
 	}
-	g.desired = next.clone()
 	keep := max(0, g.desired.ProcessNum-len(g.running))
 	if !g.desired.RemainAfterExit {
 		keep = 0

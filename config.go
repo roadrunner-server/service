@@ -32,18 +32,18 @@ func (s *Service) clone() Service {
 	return next
 }
 
-func validateRuntimeValues(count, execution int64, restart, stop uint64) error {
+func validateRuntimeValues(count, execution *int64, restart, stop *uint64) error {
 	const maxSeconds = math.MaxInt64 / int64(time.Second)
-	if count < 1 || count > math.MaxInt {
+	if count != nil && (*count < 1 || *count > math.MaxInt) {
 		return fmt.Errorf("process_num must fit int and have at least 1 process")
 	}
-	if execution < 0 || execution > maxSeconds {
+	if execution != nil && (*execution < 0 || *execution > maxSeconds) {
 		return fmt.Errorf("exec_timeout must be between 0 and %d seconds", maxSeconds)
 	}
-	if restart > uint64(maxSeconds) {
+	if restart != nil && *restart > uint64(maxSeconds) {
 		return fmt.Errorf("restart_sec must not exceed %d seconds", maxSeconds)
 	}
-	if stop > uint64(maxSeconds) {
+	if stop != nil && *stop > uint64(maxSeconds) {
 		return fmt.Errorf("timeout_stop_sec must not exceed %d seconds", maxSeconds)
 	}
 	return nil

@@ -38,7 +38,7 @@ func (r *rpc) loadProcesses(name string) ([]*Process, error) {
 func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 	r.p.logger.Debug("create service", "name", in.GetName(), "restart_sec", in.GetRestartSec(), "command", in.GetCommand(), "process number", in.GetProcessNum())
 
-	if err := validateRuntimeValues(in.GetProcessNum(), in.GetExecTimeout(), in.GetRestartSec(), in.GetTimeoutStopSec()); err != nil {
+	if err := validateRuntimeValues(&in.ProcessNum, &in.ExecTimeout, &in.RestartSec, &in.TimeoutStopSec); err != nil {
 		return err
 	}
 
