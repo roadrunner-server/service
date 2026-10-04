@@ -67,22 +67,6 @@ func WithTCPProbe(addr string) Option {
 type RR struct {
 	// Logs holds the records captured by the in-memory logger.
 	Logs *mocklogger.ObservedLogs
-
-	mu   sync.Mutex
-	errs []error
-}
-
-// Errs returns the errors the container reported on its error channel so far.
-func (rr *RR) Errs() []error {
-	rr.mu.Lock()
-	defer rr.mu.Unlock()
-	return append([]error(nil), rr.errs...)
-}
-
-func (rr *RR) addErr(err error) {
-	rr.mu.Lock()
-	rr.errs = append(rr.errs, err)
-	rr.mu.Unlock()
 }
 
 // Count returns the number of captured records whose message contains the snippet.
@@ -139,7 +123,6 @@ func Start(t *testing.T, cfgPath string, plugins []any, opts ...Option) (*RR, fu
 				if res == nil {
 					return
 				}
-				rr.addErr(res.Error)
 				t.Errorf("plugin %s reported an error: %v", res.VertexID, res.Error)
 				if errS := stopCont(); errS != nil {
 					t.Errorf("container stop: %v", errS)

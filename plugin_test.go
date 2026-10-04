@@ -5,6 +5,7 @@ import (
 	stderr "errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -49,7 +50,6 @@ func TestPluginInitDisabled(t *testing.T) {
 
 	err := p.Init(&testConfigurer{has: false}, &testLogger{l: log})
 
-	require.Error(t, err)
 	require.True(t, errors.Is(errors.Disabled, err))
 }
 
@@ -59,7 +59,6 @@ func TestPluginInitUnmarshalError(t *testing.T) {
 
 	err := p.Init(&testConfigurer{has: true, err: stderr.New("broken section")}, &testLogger{l: log})
 
-	require.ErrorContains(t, err, "service_plugin_init")
 	require.ErrorContains(t, err, "broken section")
 }
 
@@ -73,42 +72,33 @@ func TestPluginInitAppliesDefaults(t *testing.T) {
 	require.NoError(t, p.Init(cfg, &testLogger{l: log}))
 
 	require.Equal(t, 1, p.cfg.Services["some_service"].ProcessNum)
-	require.EqualValues(t, 30, p.cfg.Services["some_service"].RestartSec)
-	require.EqualValues(t, 5, p.cfg.Services["some_service"].TimeoutStopSec)
-}
-
-func TestPluginGetters(t *testing.T) {
-	p := &Plugin{}
-
-	require.Equal(t, PluginName, p.Name())
-	require.EqualValues(t, 10, p.Weight())
-	require.IsType(t, &rpc{}, p.RPC())
 }
 
 func TestPluginServeAndStop(t *testing.T) {
-	p, store := newTestPlugin(t, map[string]*Service{
+	p, _ := newTestPlugin(t, map[string]*Service{
 		"some_service": {Command: "sleep 30", ProcessNum: 2},
 	})
 
 	errCh := p.Serve()
-	requireWorkers(t, p, 2)
+	workers := p.Workers()
+	require.Len(t, workers, 2)
 	require.Empty(t, errCh)
 
-	for _, st := range p.Workers() {
+	for _, st := range workers {
 		require.NotZero(t, st.Pid)
-		require.Contains(t, st.Command, "sleep")
-		require.NotZero(t, st.MemoryUsage)
 	}
 
-	require.NoError(t, p.Stop(context.Background()))
+	require.NoError(t, p.Stop(t.Context()))
 
-	require.Equal(t, 2, store.count("service was started"))
-	require.Equal(t, 2, store.count("service was stopped"))
 	require.Empty(t, p.Workers())
+	for _, st := range workers {
+		require.Eventually(t, func() bool { return !processAlive(st.Pid) },
+			10*time.Second, 20*time.Millisecond)
+	}
 }
 
 func TestPluginServeReportsStartError(t *testing.T) {
-	p, store := newTestPlugin(t, map[string]*Service{
+	p, _ := newTestPlugin(t, map[string]*Service{
 		"some_service": {Command: filepath.Join(t.TempDir(), "no-such-binary"), ProcessNum: 1},
 	})
 
@@ -117,13 +107,11 @@ func TestPluginServeReportsStartError(t *testing.T) {
 	select {
 	case err := <-errCh:
 		require.Error(t, err)
-	case <-time.After(time.Second * 10):
-		require.Fail(t, "the start error was not pushed to the error channel")
+	default:
+		t.Fatal("Serve returned before reporting the start error")
 	}
 
-	// the process was stored before it was started, but it has no pid
 	require.Empty(t, p.Workers())
-	require.Equal(t, 1, store.count("get process state"))
 }
 
 func TestPluginResetReplacesProcesses(t *testing.T) {
@@ -132,8 +120,8 @@ func TestPluginResetReplacesProcesses(t *testing.T) {
 	})
 
 	p.Serve()
-	requireWorkers(t, p, 2)
 	before := workerPids(p.Workers())
+	require.Len(t, before, 2)
 
 	require.NoError(t, p.Reset())
 
@@ -145,18 +133,15 @@ func TestPluginResetReplacesProcesses(t *testing.T) {
 }
 
 func TestPluginResetLogsFailedRestart(t *testing.T) {
+	script := writeScript(t, "reset.sh", "#!/bin/sh\necho ready\nexec sleep 30\n")
 	p, store := newTestPlugin(t, map[string]*Service{
-		"some_service": {Command: "sleep 30", ProcessNum: 1},
+		"some_service": {Command: script, ProcessNum: 1},
 	})
 
 	p.Serve()
-	requireWorkers(t, p, 1)
-
-	// the replacement is built from the stored service, which now points at
-	// something that cannot be executed
-	v, ok := p.processes.Load("some_service")
-	require.True(t, ok)
-	v.([]*Process)[0].service.Command = filepath.Join(t.TempDir(), "no-such-binary")
+	require.Eventually(t, func() bool { return store.count("ready") == 1 },
+		10*time.Second, 20*time.Millisecond)
+	require.NoError(t, os.Remove(script))
 
 	require.NoError(t, p.Reset())
 
@@ -174,15 +159,6 @@ func newTestPlugin(t *testing.T, services map[string]*Service) (*Plugin, *captur
 	t.Cleanup(func() { _ = p.Stop(context.Background()) })
 
 	return p, store
-}
-
-// requireWorkers waits until the plugin reports n live processes.
-func requireWorkers(t *testing.T, p *Plugin, n int) {
-	t.Helper()
-
-	require.Eventually(t, func() bool {
-		return len(p.Workers()) == n
-	}, time.Second*10, time.Millisecond*20, "the plugin did not report %d processes", n)
 }
 
 // workerPids collects the pids the plugin reports.

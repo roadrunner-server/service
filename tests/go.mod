@@ -14,6 +14,7 @@ require (
 	github.com/roadrunner-server/resetter/v6 v6.0.0-beta.6
 	github.com/roadrunner-server/rpc/v6 v6.0.0-beta.6
 	github.com/roadrunner-server/service/v6 v6.0.0
+	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/stretchr/testify v1.12.1
 )
 
@@ -32,7 +33,6 @@ require (
 	github.com/roadrunner-server/errors v1.5.0 // indirect
 	github.com/roadrunner-server/tcplisten v1.6.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect

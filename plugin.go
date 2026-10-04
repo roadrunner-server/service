@@ -12,13 +12,14 @@ import (
 const PluginName string = "service"
 
 type Plugin struct {
-	mu sync.Mutex
+	// mu serializes explicit lifecycle operations. Groups protect configuration.
+	mu      sync.Mutex
+	stopped bool
 
 	logger *slog.Logger
 	cfg    Config
 
-	// all processes attached to the service
-	processes sync.Map // key -> []*Process
+	processes sync.Map // name -> *group
 }
 
 type Configurer interface {
@@ -52,43 +53,22 @@ func (p *Plugin) Init(cfg Configurer, log Logger) error {
 }
 
 func (p *Plugin) Serve() chan error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	errCh := make(chan error, 1)
-
-	// start processing
-	go func() {
-		// lock here, because the Stop command might be invoked during the Serve
-		p.mu.Lock()
-		defer p.mu.Unlock()
-
-		for k := range p.cfg.Services {
-			// create the necessary number of the processes
-			procs := make([]*Process, p.cfg.Services[k].ProcessNum)
-
-			for i := range p.cfg.Services[k].ProcessNum {
-				// create a processor structure, which will process all the services
-				procs[i] = NewServiceProcess(p.cfg.Services[k], k, p.logger)
-			}
-
-			// store all the processes idents
-			p.processes.Store(k, procs)
+	for name, svc := range p.cfg.Services {
+		if _, exists := p.processes.Load(name); exists {
+			continue
 		}
-
-		p.processes.Range(func(key, value any) bool {
-			procs := value.([]*Process)
-
-			for i := range procs {
-				cmdStr := procs[i].service.Command
-				err := procs[i].start()
-				if err != nil {
-					errCh <- err
-					return false
-				}
-				p.logger.Info("service was started", "name", key.(string), "command", cmdStr)
-			}
-
-			return true
-		})
-	}()
+		g := newGroup(svc, name, p.logger)
+		p.processes.Store(name, g)
+		if err := g.start(); err != nil {
+			stopProcesses(g.pause())
+			errCh <- err
+			return errCh
+		}
+	}
 
 	return errCh
 }
@@ -98,27 +78,15 @@ func (p *Plugin) Weight() uint {
 }
 
 func (p *Plugin) Reset() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.processes.Range(func(key, value any) bool {
-		procs := value.([]*Process)
-
-		newProcs := make([]*Process, len(procs))
-
-		for i := range procs {
-			procs[i].stop()
+		g := value.(*group)
+		if err := g.restart(); err != nil {
+			g.stop()
 			p.processes.Delete(key)
-
-			svc := *procs[i].service
-			newProc := NewServiceProcess(&svc, key.(string), p.logger)
-			err := newProc.start()
-			if err != nil {
-				p.logger.Error("unable to start the service", "name", key.(string))
-				return true
-			}
-
-			newProcs[i] = newProc
+			p.logger.Error("unable to start the service", "name", key.(string), "error", err)
 		}
-
-		p.processes.Store(key, newProcs)
 		return true
 	})
 
@@ -126,19 +94,17 @@ func (p *Plugin) Reset() error {
 }
 
 func (p *Plugin) Workers() []*process.State {
-	p.mu.Lock()
-	defer p.mu.Unlock()
 	states := make([]*process.State, 0, 5)
 
 	p.processes.Range(func(key, value any) bool {
 		k := key.(string)
-		procs := value.([]*Process)
+		procs := value.(*group).snapshot()
 
 		for i := range procs {
 			st, err := generalProcessState(procs[i].pid, procs[i].command.String())
 			if err != nil {
 				p.logger.Error("get process state", "name", k, "command", procs[i].command.String())
-				return true
+				continue
 			}
 			states = append(states, st)
 		}
@@ -150,17 +116,13 @@ func (p *Plugin) Workers() []*process.State {
 }
 
 func (p *Plugin) Stop(context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.stopped = true
 	p.processes.Range(func(key, value any) bool {
-		k := key.(string)
-		procs := value.([]*Process)
-
-		for i := range procs {
-			procs[i].stop()
-
-			p.logger.Info("service was stopped", "name", k, "command", procs[i].service.Command)
-			p.processes.Delete(key)
-		}
-
+		g := value.(*group)
+		g.stop()
+		p.processes.Delete(key)
 		return true
 	})
 
