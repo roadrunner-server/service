@@ -149,11 +149,9 @@ func (p *Process) stop() {
 	default:
 	}
 	_ = p.command.Process.Signal(syscall.SIGINT)
-	timer := time.NewTimer(time.Second * time.Duration(p.service.TimeoutStopSec)) //nolint:gosec
-	defer timer.Stop()
 	select {
 	case <-p.done:
-	case <-timer.C:
+	case <-time.After(time.Second * time.Duration(p.service.TimeoutStopSec)): //nolint:gosec
 		_ = p.command.Process.Kill()
 		<-p.done
 	}

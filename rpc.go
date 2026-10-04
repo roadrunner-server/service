@@ -27,14 +27,6 @@ func (r *rpc) loadGroup(name string) (*group, error) {
 	return v.(*group), nil
 }
 
-func (r *rpc) loadProcesses(name string) ([]*Process, error) {
-	g, err := r.loadGroup(name)
-	if err != nil {
-		return nil, err
-	}
-	return g.snapshot(), nil
-}
-
 func (r *rpc) Create(in *serviceV1.Create, out *serviceV1.Response) error {
 	r.p.logger.Debug("create service", "name", in.GetName(), "restart_sec", in.GetRestartSec(), "command", in.GetCommand(), "process number", in.GetProcessNum())
 
@@ -128,10 +120,11 @@ func (r *rpc) Restart(in *serviceV1.Service, out *serviceV1.Response) error {
 func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 	r.p.logger.Debug("service status", "name", in.GetName())
 
-	procs, err := r.loadProcesses(in.GetName())
+	g, err := r.loadGroup(in.GetName())
 	if err != nil {
 		return err
 	}
+	procs := g.snapshot()
 
 	for i := range procs {
 		state, err := generalProcessState(procs[i].pid, procs[i].command.String())
@@ -151,10 +144,11 @@ func (r *rpc) Status(in *serviceV1.Service, out *serviceV1.Status) error {
 func (r *rpc) Statuses(in *serviceV1.Service, out *serviceV1.Statuses) error {
 	r.p.logger.Debug("service status", "name", in.GetName())
 
-	procs, err := r.loadProcesses(in.GetName())
+	g, err := r.loadGroup(in.GetName())
 	if err != nil {
 		return err
 	}
+	procs := g.snapshot()
 
 	for i := range procs {
 		state, err := generalProcessState(procs[i].pid, procs[i].command.String())
