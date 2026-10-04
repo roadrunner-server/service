@@ -50,12 +50,7 @@ func (p *Process) Write(b []byte) (int, error) {
 
 func (p *Process) start() error {
 	cmdArgs := strings.Split(p.service.Command, " ")
-
-	if p.service.ExecTimeout > 0 {
-		p.createProcessCtx(cmdArgs)
-	} else {
-		p.createProcess(cmdArgs)
-	}
+	p.createProcess(cmdArgs)
 	defer func() {
 		if p.pid == 0 && p.cancel != nil {
 			p.cancel()
@@ -89,26 +84,13 @@ func (p *Process) start() error {
 	return nil
 }
 
-// create command for the process with ExecTimeout
-func (p *Process) createProcessCtx(cmdArgs []string) {
-	if len(cmdArgs) < 2 {
-		var ctx context.Context
-		ctx, p.cancel = context.WithTimeout(context.Background(), p.service.ExecTimeout)
-		p.command = exec.CommandContext(ctx, p.service.Command) //nolint:gosec
-	} else {
-		var ctx context.Context
-		ctx, p.cancel = context.WithTimeout(context.Background(), p.service.ExecTimeout)
-		p.command = exec.CommandContext(ctx, cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
-	}
-}
-
 // create command for the process
 func (p *Process) createProcess(cmdArgs []string) {
-	if len(cmdArgs) < 2 {
-		p.command = exec.CommandContext(context.Background(), p.service.Command) //nolint:gosec
-	} else {
-		p.command = exec.CommandContext(context.Background(), cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
+	ctx := context.Background()
+	if p.service.ExecTimeout > 0 {
+		ctx, p.cancel = context.WithTimeout(ctx, p.service.ExecTimeout)
 	}
+	p.command = exec.CommandContext(ctx, cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
 }
 
 func (p *Process) configureUser() error {
