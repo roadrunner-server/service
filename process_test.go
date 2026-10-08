@@ -37,11 +37,9 @@ func TestCreateProcess(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Process{service: &Service{Command: tt.command, ExecTimeout: tt.execTimeout}}
+			p.createProcess(strings.Split(tt.command, " "))
 			if tt.execTimeout > 0 {
-				p.createProcessCtx(strings.Split(tt.command, " "))
 				t.Cleanup(p.cancel)
-			} else {
-				p.createProcess(strings.Split(tt.command, " "))
 			}
 
 			require.Equal(t, tt.args, p.command.Args)
