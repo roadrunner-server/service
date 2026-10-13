@@ -11,7 +11,7 @@ require (
 	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.3
 	github.com/roadrunner-server/informer/v6 v6.0.0-beta.5
 	github.com/roadrunner-server/pool/v2 v2.0.0-beta.1
-	github.com/roadrunner-server/resetter/v6 v6.0.0-beta.6
+	github.com/roadrunner-server/resetter/v6 v6.0.0
 	github.com/roadrunner-server/rpc/v6 v6.0.0-beta.6
 	github.com/roadrunner-server/service/v6 v6.0.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
