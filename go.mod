@@ -7,14 +7,14 @@ toolchain go1.27.1
 require (
 	github.com/roadrunner-server/api-go/v6 v6.0.0-beta.15
 	github.com/roadrunner-server/errors v1.6.0
-	github.com/roadrunner-server/pool/v2 v2.0.0-beta.1
+	github.com/roadrunner-server/pool/v2 v2.0.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/stretchr/testify v1.12.1
 )
 
 require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/roadrunner-server/goridge/v4 v4.0.0-beta.3 // indirect
+	github.com/roadrunner-server/goridge/v4 v4.0.0 // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
 	github.com/tklauser/numcpus v0.12.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
